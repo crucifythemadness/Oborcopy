@@ -1,0 +1,36 @@
+# Linux build + test of Oborcopy (Ubuntu 24.04 LTS ships Qt 6.4).
+#   docker build -f docker/Dockerfile.linux -t oborcopy-linux .
+FROM ubuntu:24.04 AS build
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      build-essential cmake ninja-build \
+      qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev patchelf \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY CMakeLists.txt CMakePresets.json ./
+COPY cmake ./cmake
+COPY resources ./resources
+COPY src ./src
+COPY tests ./tests
+
+RUN cmake --preset linux \
+ && cmake --build --preset linux \
+ && QT_QPA_PLATFORM=offscreen ctest --test-dir build/linux --output-on-failure
+
+RUN cmake --install build/linux --prefix /out
+
+# Self-contained package (Qt bundled) - extracted by scripts/deploy-linux.ps1.
+COPY packaging ./packaging
+COPY docker/bundle-linux.sh ./docker/bundle-linux.sh
+RUN sed -i 's/\r$//' docker/bundle-linux.sh \
+ && bash docker/bundle-linux.sh /out /src /deploy
+
+# Minimal stage that only carries the binaries (extracted by scripts/build-linux.ps1).
+FROM scratch AS artifacts
+COPY --from=build /out/bin /
+
+FROM scratch AS deploy
+COPY --from=build /deploy /

@@ -1,0 +1,19 @@
+# Build output
+build/
+
+# Deployment packages (regenerate with scripts/deploy-*.ps1)
+deploy-win64/
+deploy-linux/
+*.zip
+*.tar.gz
+
+# IDE / tool files
+CMakeLists.txt.user*
+CMakeUserPresets.json
+.vs/
+.vscode/
+.idea/
+.qtcreator/
+*.swp
+Thumbs.db
+.DS_Store

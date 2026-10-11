@@ -1,0 +1,13 @@
+# Normalise line endings in the repository
+* text=auto
+
+# Shell scripts must keep LF, otherwise they fail on Linux ("bad interpreter")
+*.sh text eol=lf
+Dockerfile* text eol=lf
+
+# PowerShell scripts with CRLF for Windows PowerShell
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.ico binary
