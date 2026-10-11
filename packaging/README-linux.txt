@@ -9,6 +9,9 @@ REQUIREMENTS
   Wayland), e.g. Ubuntu 24.04+, Linux Mint 22+, Debian 13+, Fedora 40+.
   Qt is bundled - no extra packages are needed.
 
+USER GUIDE
+  Oborcopy-User-Guide.pdf in this folder explains everything step by step.
+
 START
   tar xzf oborcopy-@VERSION@-linux-x86_64.tar.gz
   cd oborcopy-@VERSION@-linux-x86_64

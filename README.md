@@ -39,4 +39,8 @@ oborcopy-cli --job "Music Backup" --dry-run
 oborcopy-cli --job "Music Backup" --yes
 ```
 
-See [Oborcopy-SAD.md](Oborcopy-SAD.md) for the architecture.
+## Documentation
+
+* **User Guide:** [docs/user-guide/Oborcopy-User-Guide.md](docs/user-guide/Oborcopy-User-Guide.md)
+  (PDF: [Oborcopy-User-Guide.pdf](docs/user-guide/Oborcopy-User-Guide.pdf), rebuilt with `.\scripts\build-user-guide.ps1`)
+* **Architecture:** [Oborcopy-SAD.md](Oborcopy-SAD.md)

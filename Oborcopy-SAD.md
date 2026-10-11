@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Document version | 1.0 |
+| Document version | 1.1 |
 | Software version | 1.0.0 |
 | Last updated | 2026-10-11 |
 | Status | Living document – updated with every milestone |
@@ -438,6 +438,14 @@ oborcopy-<version>-linux-x86_64/
 * RPATHs are set with `patchelf`, so no `LD_LIBRARY_PATH` is required.
 * Target requirement: x86_64, glibc ≥ 2.39 (Ubuntu 24.04+, Mint 22+, Debian 13+, Fedora 40+), an X11 or Wayland (XWayland) desktop.
 
+**User Guide**
+
+`docs/user-guide/Oborcopy-User-Guide.md` (Markdown with screenshots in `docs/user-guide/images/`) is converted to `Oborcopy-User-Guide.pdf` by `.\scripts\build-user-guide.ps1`:
+1. Pandoc (`pandoc/core` Docker image) produces a self-contained HTML file styled with `guide.css`.
+2. Microsoft Edge (headless) prints it to an A4 PDF.
+
+The PDF is part of both deployment packages.
+
 **Package verification**
 * Windows: started with a PATH that contains no Qt/MinGW folders (CLI `--version`, dry run, GUI window).
 * Linux: `docker/verify-linux-package.sh` in a fresh `ubuntu:24.04` container. It checks:
@@ -485,3 +493,4 @@ oborcopy-<version>-linux-x86_64/
 | 0.1 (SW 0.1.0) | 2026-10-11 | Initial architecture: core engine, GUI, CLI, tests, Windows + Linux (Docker) builds. |
 | 0.2 (SW 0.1.0) | 2026-10-11 | Deployment packages: `deploy-win64` (windeployqt) and self-contained `deploy-linux` (bundled Qt, RPATH, launchers, desktop entry); package verification. |
 | 1.0 (SW 1.0.0) | 2026-10-11 | Release 1.0.0 – verified with a full music library sync on Windows. |
+| 1.1 (SW 1.0.0) | 2026-10-11 | User Guide (Markdown + PDF) with screenshots, included in both packages. UI fixes: "&" in Advanced section titles, width of the job name dialog, "file(s)" label. |

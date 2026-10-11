@@ -4,6 +4,9 @@ Oborcopy @VERSION@ for Windows 10/11 (64-bit)
 Oborcopy copies and mirrors folders incrementally (like Robocopy / rsync),
 with a preview before anything is deleted.
 
+USER GUIDE
+  Oborcopy-User-Guide.pdf in this folder explains everything step by step.
+
 START
   Double-click Oborcopy.exe. No installation is needed; keep all files of
   this folder together (the DLLs and sub-folders are required).

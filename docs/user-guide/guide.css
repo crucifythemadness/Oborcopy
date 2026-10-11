@@ -1,0 +1,54 @@
+/* Print layout of the Oborcopy User Guide (used by scripts/build-user-guide.ps1). */
+@page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+
+:root { --accent: #2F6FEB; --accent2: #13B3A3; --text: #1C2230; --muted: #677086; --border: #D9DFE9; --soft: #F3F5F9; }
+
+html { font-size: 10pt; }
+body {
+  font-family: "Segoe UI", "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+  color: var(--text); line-height: 1.42; max-width: none; margin: 0; padding: 0;
+}
+
+/* Cover page */
+.cover { text-align: center; padding-top: 70mm; page-break-after: always; }
+.cover img { width: 120px; }
+.cover h1 { font-size: 30pt; margin: 14px 0 6px; border: none; color: var(--text); }
+.cover p { color: var(--muted); font-size: 13pt; margin: 6px 0; }
+.cover strong { color: var(--accent); }
+
+h1, h2, h3 { color: var(--text); line-height: 1.25; }
+h2 {
+  font-size: 18pt; margin-top: 0; padding-bottom: 6px;
+  border-bottom: 3px solid; border-image: linear-gradient(90deg, var(--accent), var(--accent2)) 1;
+  page-break-before: always;
+}
+h3 { font-size: 13pt; margin-top: 18px; color: var(--accent); }
+h2, h3 { page-break-after: avoid; }
+
+a { color: var(--accent); text-decoration: none; }
+hr { display: none; }
+
+img { max-width: 100%; }
+p > img, p img:only-child {
+  display: block; margin: 10px auto 14px; max-height: 98mm;
+  border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 2px 8px rgba(28, 34, 48, 0.12);
+}
+p:has(> img) { page-break-inside: avoid; text-align: center; }
+
+table { border-collapse: collapse; width: 100%; margin: 10px 0 14px; font-size: 9.5pt; page-break-inside: auto; }
+tr { page-break-inside: avoid; }
+th { background: var(--soft); text-align: left; font-weight: 600; }
+th, td { border: 1px solid var(--border); padding: 5px 8px; vertical-align: top; }
+
+blockquote {
+  margin: 12px 0; padding: 8px 14px; background: #E3ECFD; border-left: 4px solid var(--accent);
+  border-radius: 4px; page-break-inside: avoid;
+}
+blockquote p { margin: 4px 0; }
+
+code { font-family: Consolas, "DejaVu Sans Mono", monospace; font-size: 9pt; background: var(--soft); padding: 1px 4px; border-radius: 3px; }
+pre { background: var(--soft); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; page-break-inside: avoid; white-space: pre-wrap; }
+pre code { background: none; padding: 0; }
+
+/* Contents list right after the cover */
+#contents + ol { columns: 1; line-height: 1.9; font-size: 11pt; }

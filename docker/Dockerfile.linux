@@ -24,6 +24,7 @@ RUN cmake --install build/linux --prefix /out
 
 # Self-contained package (Qt bundled) - extracted by scripts/deploy-linux.ps1.
 COPY packaging ./packaging
+COPY docs/user-guide/Oborcopy-User-Guide.pdf ./docs/user-guide/
 COPY docker/bundle-linux.sh ./docker/bundle-linux.sh
 RUN sed -i 's/\r$//' docker/bundle-linux.sh \
  && bash docker/bundle-linux.sh /out /src /deploy

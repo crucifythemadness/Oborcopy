@@ -144,9 +144,14 @@ void JobListWidget::deleteJob()
 
 QString JobListWidget::askName(const QString &title, const QString &initial)
 {
-    bool ok = false;
-    const QString name = QInputDialog::getText(this, title, tr("Job name:"), QLineEdit::Normal,
-                                               initial, &ok).trimmed();
+    QInputDialog dialog(this);
+    dialog.setWindowTitle(title);
+    dialog.setLabelText(tr("Job name:"));
+    dialog.setTextValue(initial);
+    if (auto *edit = dialog.findChild<QLineEdit *>())
+        edit->setMinimumWidth(340); // the default dialog is too narrow to show its title
+    const bool ok = dialog.exec() == QDialog::Accepted;
+    const QString name = dialog.textValue().trimmed();
     if (!ok || name.isEmpty())
         return {};
     if (name.compare(currentJob(), Qt::CaseInsensitive) != 0 && m_store.exists(name)) {

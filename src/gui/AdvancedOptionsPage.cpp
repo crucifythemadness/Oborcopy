@@ -83,7 +83,7 @@ CollapsibleSection *AdvancedOptionsPage::buildCopySection()
     m_skipOlder = new QCheckBox(tr("Never overwrite a newer destination file (skip older source files)"));
     m_skipNewer = new QCheckBox(tr("Skip files that are newer in the source"));
     m_overwriteAll = new QCheckBox(tr("Always copy every file, even unchanged ones"));
-    m_parallel = spin(this, 1, 16, tr(" files at once"));
+    m_parallel = spin(this, 1, 16, tr(" file(s) at once"));
     m_parallel->setToolTip(tr("More than 1 helps with SSDs and networks; HDDs are usually fastest with 1."));
     m_throughput = spin(this, 0, 100000, tr(" MB/s"), tr("Unlimited"));
     form->addRow(QString(), m_copyEmptyDirs);

@@ -15,7 +15,7 @@ CollapsibleSection::CollapsibleSection(const QString &title, const QString &subt
     , m_content(new QWidget(this))
 {
     setObjectName(QStringLiteral("Card"));
-    m_header->setText(title);
+    m_header->setText(QString(title).replace(QLatin1Char('&'), QStringLiteral("&&"))); // "&" is not a shortcut
     m_header->setCheckable(true);
     m_header->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     m_header->setArrowType(Qt::RightArrow);
