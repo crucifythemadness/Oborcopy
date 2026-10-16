@@ -63,6 +63,7 @@ MainWindow::MainWindow(QWidget *parent)
     restoreSettings();
     updateScheduleBadges();
     m_jobs->reload(m_settings.lastJob);
+    updateRunButtons();
 }
 
 QWidget *MainWindow::buildSidebar()
@@ -130,6 +131,7 @@ QWidget *MainWindow::buildJobHeader()
     m_source->setPlaceholder(tr("Folder to copy from, e.g. D:\\Music"));
     m_dest = new PathPicker(tr("Destination"), card);
     m_dest->setPlaceholder(tr("Backup folder, e.g. E:\\Music-Backup"));
+    m_dest->setCreatable(true);
     auto *arrow = new QLabel(card);
     arrow->setPixmap(IconFactory::icon(IconKind::Arrow, Theme::colors().accent).pixmap(28, 28));
 
@@ -228,6 +230,22 @@ void MainWindow::connectSignals()
     connect(m_jobs, &JobListWidget::jobDeleted, this, &MainWindow::onJobDeleted);
     connect(m_source, &PathPicker::pathChanged, this, &MainWindow::scheduleSave);
     connect(m_dest, &PathPicker::pathChanged, this, &MainWindow::scheduleSave);
+    for (PathPicker *picker : {m_source, m_dest}) {
+        connect(picker, &PathPicker::availabilityChanged, this, [this]() {
+            updateRunButtons();
+            if (m_sync->isRunning())
+                return;
+            const QString reason = runBlocker();
+            if (!reason.isEmpty() && m_source->availability() != PathPicker::Availability::Checking
+                && m_dest->availability() != PathPicker::Availability::Checking) {
+                m_status->setText(reason);
+                m_blockerShown = true;
+            } else if (reason.isEmpty() && m_blockerShown) {
+                m_status->clear();
+                m_blockerShown = false;
+            }
+        });
+    }
     connect(m_basic, &BasicOptionsPage::changed, this, &MainWindow::scheduleSave);
     connect(m_advanced, &AdvancedOptionsPage::changed, this, &MainWindow::scheduleSave);
     connect(m_saveTimer, &QTimer::timeout, this, &MainWindow::saveNow);
@@ -277,6 +295,7 @@ void MainWindow::loadJob(const QString &name)
     m_loading = false;
     m_settings.lastJob = m_job.name;
     setWindowTitle(QStringLiteral("%1 – %2").arg(m_job.name, AppInfo::name()));
+    updateRunButtons();
     showOptions();
 }
 
@@ -335,7 +354,7 @@ void MainWindow::onJobDeleted(const QString &name)
 
 void MainWindow::startSync(SyncController::StartMode mode)
 {
-    if (m_sync->isRunning() || !m_hasJob)
+    if (m_sync->isRunning() || !m_hasJob || !runBlocker().isEmpty())
         return;
     saveNow();
     const QString problem = JobValidator::validate(m_job);
@@ -423,11 +442,39 @@ void MainWindow::setRunning(bool running)
     m_cancelButton->setEnabled(running);
     m_pauseButton->setText(tr("Pause"));
     m_pauseButton->setIcon(IconFactory::icon(IconKind::Pause));
-    m_startAction->setEnabled(!running);
-    m_previewAction->setEnabled(!running);
     m_pauseAction->setEnabled(running);
     m_cancelAction->setEnabled(running);
     m_status->setText(running ? tr("Sync running…") : QString());
+    m_blockerShown = false;
+    updateRunButtons();
+}
+
+// Preview and Start need a reachable source and destination.
+QString MainWindow::runBlocker() const
+{
+    auto why = [](const PathPicker *picker, const QString &name) -> QString {
+        switch (picker->availability()) {
+        case PathPicker::Availability::Empty: return tr("Choose a %1 folder.").arg(name);
+        case PathPicker::Availability::Checking: return tr("Checking the %1 folder…").arg(name);
+        case PathPicker::Availability::Offline:
+            return tr("The %1 folder is offline – connect the drive or check the network.").arg(name);
+        default: return QString();
+        }
+    };
+    const QString source = why(m_source, tr("source"));
+    return source.isEmpty() ? why(m_dest, tr("destination")) : source;
+}
+
+void MainWindow::updateRunButtons()
+{
+    const QString reason = runBlocker();
+    const bool enabled = !m_sync->isRunning() && m_hasJob && reason.isEmpty();
+    m_previewButton->setEnabled(enabled);
+    m_startButton->setEnabled(enabled);
+    m_previewAction->setEnabled(enabled);
+    m_startAction->setEnabled(enabled);
+    m_previewButton->setToolTip(reason.isEmpty() ? tr("Scan and show what would change (F6)") : reason);
+    m_startButton->setToolTip(reason.isEmpty() ? tr("Start the sync (F5)") : reason);
 }
 
 void MainWindow::showOptions()

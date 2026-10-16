@@ -63,6 +63,8 @@ private:
     void togglePause();
     void cancelSync();
     void setRunning(bool running);
+    void updateRunButtons();
+    QString runBlocker() const;
     void showOptions();
 
     // Misc
@@ -82,6 +84,7 @@ private:
     bool m_hasJob = false;
     bool m_loading = false;
     bool m_previewRun = false;
+    bool m_blockerShown = false; // the status line shows why Preview/Start are disabled
     ReportPtr m_lastReport;
     SyncController *m_sync;
     QTimer *m_saveTimer;

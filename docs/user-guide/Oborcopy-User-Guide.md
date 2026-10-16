@@ -124,6 +124,16 @@ There are three ways to enter a folder:
 * **type or paste** the path into the field, or
 * **drag a folder** from Explorer / your file manager **onto the field**.
 
+A **dot** in front of *Source* and *Destination* shows whether the folder can be reached right now. Oborcopy checks this every few seconds, so it changes as soon as you plug in or unplug a disk or a network drive goes offline:
+
+| Dot | Meaning |
+|---|---|
+| 🟢 green | **Online** – the folder is reachable. For the destination also: *folder does not exist yet – it will be created* (its parent folder exists). |
+| 🔴 red | **Offline** – the disk is not connected, the network share is not reachable or the folder was not found. |
+| ⚪ grey | No folder chosen yet, or the check is still running. |
+
+**Preview** and **Start sync** (and `F5`/`F6`) are only available while both dots are green. The line at the bottom of the window tells you which folder is missing.
+
 ### 4.2 The Basic options
 
 | Option | Meaning | Recommendation |
