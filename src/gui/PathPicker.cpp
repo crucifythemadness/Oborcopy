@@ -6,7 +6,6 @@
 
 #include <QDir>
 #include <QDragEnterEvent>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -73,7 +72,7 @@ void PathPicker::setPlaceholder(const QString &text)
 void PathPicker::browse()
 {
     const QString start = path().isEmpty() ? QDir::homePath() : path();
-    const QString dir = QFileDialog::getExistingDirectory(this, m_caption, start);
+    const QString dir = GuiUtil::chooseDirectory(this, m_caption, start);
     if (!dir.isEmpty())
         m_edit->setText(QDir::toNativeSeparators(dir));
 }

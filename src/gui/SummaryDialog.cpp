@@ -5,7 +5,6 @@
 #include "Theme.h"
 
 #include <QDir>
-#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
@@ -142,9 +141,9 @@ void SummaryDialog::showDetails(const ResultRow *row)
 
 void SummaryDialog::exportCsv()
 {
-    const QString path = QFileDialog::getSaveFileName(this, tr("Export summary"),
-                                                      QDir::homePath() + QStringLiteral("/oborcopy-summary.csv"),
-                                                      tr("CSV files (*.csv)"));
+    const QString path = GuiUtil::chooseSaveFile(this, tr("Export summary"),
+                                                 QDir::homePath() + QStringLiteral("/oborcopy-summary.csv"),
+                                                 tr("CSV files (*.csv)"));
     if (path.isEmpty())
         return;
     auto quote = [](QString s) { return QLatin1Char('"') + s.replace(QLatin1Char('"'), QStringLiteral("\"\"")) + QLatin1Char('"'); };

@@ -9,7 +9,6 @@
 #include <QComboBox>
 #include <QDir>
 #include <QDoubleSpinBox>
-#include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLineEdit>
@@ -204,7 +203,7 @@ CollapsibleSection *AdvancedOptionsPage::buildLogSection()
     form->addRow(tr("Detail:"), m_logLevel);
     form->addRow(tr("Keep logs of the last:"), m_keepLogs);
     connect(browse, &QToolButton::clicked, this, [this]() {
-        const QString dir = QFileDialog::getExistingDirectory(this, tr("Log folder"), m_logDir->text());
+        const QString dir = GuiUtil::chooseDirectory(this, tr("Log folder"), m_logDir->text());
         if (!dir.isEmpty()) {
             m_logDir->setText(QDir::toNativeSeparators(dir));
             emit changed();

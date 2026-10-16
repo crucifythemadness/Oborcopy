@@ -33,6 +33,12 @@ void openFile(const QString &path);
 // Native path with invisible break opportunities after separators, so long
 // paths can wrap inside labels.
 QString displayPath(const QString &path);
+// File dialogs. On Linux the bundled Qt has no native dialog, so the Qt dialog
+// gets the mounted volumes (USB sticks, extra disks, network shares) in its
+// sidebar - QDir::drives() only reports "/" there.
+QString chooseDirectory(QWidget *parent, const QString &caption, const QString &start);
+QString chooseSaveFile(QWidget *parent, const QString &caption, const QString &start,
+                       const QString &filter);
 
 } // namespace obor::GuiUtil
 

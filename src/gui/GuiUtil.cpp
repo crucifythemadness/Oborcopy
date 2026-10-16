@@ -2,16 +2,79 @@
 
 #include <QDesktopServices>
 #include <QDir>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLocale>
 #include <QRegularExpression>
+#include <QStorageInfo>
 #include <QStyle>
 #include <QUrl>
 #include <QVBoxLayout>
 
 namespace obor::GuiUtil {
+
+namespace {
+
+#ifndef Q_OS_WIN
+// Real disks, USB sticks and network shares - not pseudo or system mounts.
+bool isUserVolume(const QStorageInfo &volume)
+{
+    static const QStringList pseudoTypes = {
+        QStringLiteral("tmpfs"),       QStringLiteral("devtmpfs"),  QStringLiteral("ramfs"),
+        QStringLiteral("proc"),        QStringLiteral("sysfs"),     QStringLiteral("squashfs"),
+        QStringLiteral("overlay"),     QStringLiteral("efivarfs"),  QStringLiteral("autofs"),
+        QStringLiteral("devpts"),      QStringLiteral("securityfs"), QStringLiteral("debugfs"),
+        QStringLiteral("tracefs"),     QStringLiteral("configfs"),  QStringLiteral("fusectl"),
+        QStringLiteral("mqueue"),      QStringLiteral("hugetlbfs"), QStringLiteral("pstore"),
+        QStringLiteral("bpf"),         QStringLiteral("binfmt_misc"), QStringLiteral("nsfs"),
+        QStringLiteral("rpc_pipefs"),  QStringLiteral("fuse.portal"), QStringLiteral("fuse.gvfsd-fuse")};
+    static const QStringList systemPrefixes = {
+        QStringLiteral("/proc"), QStringLiteral("/sys"),  QStringLiteral("/dev"),
+        QStringLiteral("/snap"), QStringLiteral("/boot"), QStringLiteral("/var/lib"),
+        QStringLiteral("/run"),  QStringLiteral("/tmp")};
+
+    if (!volume.isValid() || !volume.isReady())
+        return false;
+    const QString root = volume.rootPath();
+    if (root == QDir::rootPath())
+        return false;
+    const QString type = QString::fromUtf8(volume.fileSystemType());
+    if (pseudoTypes.contains(type) || type.startsWith(QLatin1String("cgroup")))
+        return false;
+    if (root.startsWith(QLatin1String("/run/media/")))
+        return true;
+    for (const QString &prefix : systemPrefixes) {
+        if (root == prefix || root.startsWith(prefix + QLatin1Char('/')))
+            return false;
+    }
+    return true;
+}
+
+QList<QUrl> volumeSidebarUrls()
+{
+    QStringList roots = {QDir::homePath(), QDir::rootPath()};
+    for (const QStorageInfo &volume : QStorageInfo::mountedVolumes()) {
+        if (isUserVolume(volume) && !roots.contains(volume.rootPath()))
+            roots.append(volume.rootPath());
+    }
+    QList<QUrl> urls;
+    for (const QString &root : roots)
+        urls.append(QUrl::fromLocalFile(root));
+    return urls;
+}
+
+QString runDialog(QFileDialog &dialog)
+{
+    dialog.setSidebarUrls(volumeSidebarUrls());
+    if (dialog.exec() != QDialog::Accepted)
+        return {};
+    return dialog.selectedFiles().value(0);
+}
+#endif
+
+} // namespace
 
 QString formatBytes(qint64 bytes)
 {
@@ -130,6 +193,31 @@ QString displayPath(const QString &path)
     const QChar separator = QDir::separator();
     native.replace(separator, QString(separator) + QChar(0x200B));
     return native;
+}
+
+QString chooseDirectory(QWidget *parent, const QString &caption, const QString &start)
+{
+#ifdef Q_OS_WIN
+    return QFileDialog::getExistingDirectory(parent, caption, start);
+#else
+    QFileDialog dialog(parent, caption, start);
+    dialog.setFileMode(QFileDialog::Directory);
+    dialog.setOption(QFileDialog::ShowDirsOnly);
+    return runDialog(dialog);
+#endif
+}
+
+QString chooseSaveFile(QWidget *parent, const QString &caption, const QString &start,
+                       const QString &filter)
+{
+#ifdef Q_OS_WIN
+    return QFileDialog::getSaveFileName(parent, caption, start, filter);
+#else
+    QFileDialog dialog(parent, caption, start, filter);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setFileMode(QFileDialog::AnyFile);
+    return runDialog(dialog);
+#endif
 }
 
 } // namespace obor::GuiUtil
