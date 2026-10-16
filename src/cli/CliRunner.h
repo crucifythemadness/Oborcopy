@@ -7,9 +7,12 @@
 
 #include <QTextStream>
 
+#include <memory>
 #include <optional>
 
 namespace obor {
+
+class SyncControl;
 
 // Headless front end, e.g. for Windows Task Scheduler or cron:
 //   oborcopy-cli --job "Music Backup" --yes
@@ -36,6 +39,8 @@ private:
         bool force = false;
         bool quiet = false;
         bool verbose = false;
+        bool scheduled = false;    // started by the scheduler service
+        bool stdinControl = false; // "cancel" (or end of input) on stdin cancels the run
         bool infoOnly = false; // --help or --version was handled
     };
 
@@ -44,6 +49,7 @@ private:
     std::optional<JobOptions> loadJob(const Options &options);
     int runJob(JobOptions job, const Options &options);
     bool confirmPlan(const SyncPlan &plan, const Options &options);
+    static void watchStdin(std::shared_ptr<SyncControl> control);
     void printProgress(const ProgressInfo &info);
     void printSummary(const RunReport &report);
 

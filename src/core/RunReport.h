@@ -47,6 +47,7 @@ struct RunReport
     QString destination;
     SyncMode mode = SyncMode::Update;
     bool dryRun = false;
+    bool scheduled = false; // started by the scheduler service, not by the user
     QDateTime started;
     QDateTime finished;
     RunStatus status = RunStatus::Completed;

@@ -18,9 +18,9 @@ if (-not $SkipBuild) {
 
 if (Test-Path $deploy) { Remove-Item -Recurse -Force $deploy }
 New-Item -ItemType Directory $deploy | Out-Null
-Copy-Item "$build\Oborcopy.exe", "$build\oborcopy-cli.exe" $deploy
+Copy-Item "$build\Oborcopy.exe", "$build\oborcopy-cli.exe", "$build\oborcopy-service.exe" $deploy
 
-foreach ($exe in "Oborcopy.exe", "oborcopy-cli.exe") {
+foreach ($exe in "Oborcopy.exe", "oborcopy-cli.exe", "oborcopy-service.exe") {
     & "$qtBin\windeployqt.exe" --release --compiler-runtime --no-translations `
         --no-system-d3d-compiler --no-opengl-sw "$deploy\$exe"
     if ($LASTEXITCODE -ne 0) { throw "windeployqt failed for $exe" }

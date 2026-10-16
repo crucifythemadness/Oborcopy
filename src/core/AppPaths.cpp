@@ -38,6 +38,11 @@ QString defaultLogDir()
            + QStringLiteral("/logs");
 }
 
+QString serviceDir()
+{
+    return configDir() + QStringLiteral("/service");
+}
+
 bool ensureDir(const QString &path)
 {
     return QDir().mkpath(path);

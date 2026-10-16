@@ -6,7 +6,7 @@
 
 **Back up and mirror your folders – safely and step by step**
 
-Version 1.0.0 · for Windows 10/11 and Linux
+Version 1.1.0 · for Windows 10/11 and Linux
 
 </div>
 
@@ -21,7 +21,7 @@ Version 1.0.0 · for Windows 10/11 and Linux
 7. [Reading the results](#7-reading-the-results)
 8. [Advanced options](#8-advanced-options)
 9. [Weekly backups – the recommended routine](#9-weekly-backups--the-recommended-routine)
-10. [Automatic backups with the command line](#10-automatic-backups-with-the-command-line)
+10. [Automatic backups](#10-automatic-backups)
 11. [Settings, log files and where things are stored](#11-settings-log-files-and-where-things-are-stored)
 12. [How Oborcopy protects your data](#12-how-oborcopy-protects-your-data)
 13. [Questions and troubleshooting](#13-questions-and-troubleshooting)
@@ -57,7 +57,7 @@ Oborcopy does not need an installer. You unpack it and start it.
 
 ### 2.1 Windows 10 / 11
 
-1. Unpack `Oborcopy-1.0.0-win64.zip` to a folder of your choice, for example `C:\Tools\Oborcopy`.
+1. Unpack `Oborcopy-1.1.0-win64.zip` to a folder of your choice, for example `C:\Tools\Oborcopy`.
 2. Double-click **`Oborcopy.exe`**.
 3. *Optional:* right-click `Oborcopy.exe` → **Show more options → Send to → Desktop (create shortcut)**.
 
@@ -71,11 +71,11 @@ Requirements: 64-bit Linux, as new as Ubuntu 24.04 or newer (e.g. Linux Mint 22,
 
 1. Unpack the archive in a terminal:
    ```
-   tar xzf oborcopy-1.0.0-linux-x86_64.tar.gz
+   tar xzf oborcopy-1.1.0-linux-x86_64.tar.gz
    ```
 2. Start Oborcopy:
    ```
-   cd oborcopy-1.0.0-linux-x86_64
+   cd oborcopy-1.1.0-linux-x86_64
    ./oborcopy
    ```
 3. *Optional:* add Oborcopy to your application menu:
@@ -377,11 +377,80 @@ For a music collection (or photos, documents …) with one backup disk:
 
 ---
 
-## 10. Automatic backups with the command line
+## 10. Automatic backups
 
-Besides the window program, Oborcopy includes the command-line tool **`oborcopy-cli`**. It runs a saved job without a window – ideal for automatic backups.
+Oborcopy can run your jobs automatically at set times – every few hours, daily, weekly or monthly. The easiest way is the built-in **Oborcopy Scheduler** service (10.1 – 10.5). If you prefer, you can still use the command-line tool with the Windows Task Scheduler or cron (10.6 – 10.8).
 
-### 10.1 Commands
+### 10.1 The Oborcopy Scheduler service
+
+The Oborcopy Scheduler is a small background program that is installed as a real service of your operating system:
+
+* **Windows:** it appears in *Services* (`services.msc`) as **Oborcopy Scheduler** and starts automatically with Windows.
+* **Linux:** it is a *systemd user service* (`oborcopy.service`) of your account. Check it with `systemctl --user status oborcopy`.
+
+The service runs **under your own user account**. That is why it sees the same jobs, the same folders and the same network shares (e.g. `\\nas\backup`) as Oborcopy itself. You can **close Oborcopy** – the service keeps running and starts your jobs on time. Oborcopy is only the *Service Manager*: you use it to set up, control and check the service.
+
+The service runs one job at a time with `oborcopy-cli` and writes the normal log file and run report – so every automatic run appears in the **Run history**.
+
+### 10.2 Installing the service
+
+1. Open *Service → Service Manager…* (`Ctrl+M`) or click the **status pill** in the sidebar above *Run history*.
+2. Click **Install service…**.
+3. **Windows:** confirm the administrator question (UAC). Windows then asks for **your Windows password** – the service needs it to log on as you. Use your password, not a Windows Hello PIN. Oborcopy never sees or stores the password; Windows keeps it.
+   **Linux:** nothing to confirm – no root password is needed. Oborcopy also enables *linger*, so the service keeps running after you log out and starts at boot. If your system does not allow that, Oborcopy shows a note; the service then runs while you are logged in.
+4. The status changes to **Service running**.
+
+> **Tip:** If you change your Windows password later, the service can no longer log on. The Service Manager then shows an error – click **Update password…**.
+
+### 10.3 Scheduling a job
+
+1. In the Service Manager click **Schedule a job…** – or select a job in the main window and choose *Service → Schedule this job…*.
+2. Choose the **job** and how often it should run:
+   * **Every few hours** – e.g. every 4 hours at minute :15 (00:15, 04:15, 08:15 …)
+   * **Daily** – at a time, e.g. 23:30
+   * **Weekly** – on the days you tick, e.g. Mon and Thu at 07:00
+   * **Monthly** – on a day of the month, or on the **last day**. A day the month does not have (e.g. 31) runs on its last day.
+3. Options:
+   * **Run a missed backup once after start-up** – if the computer was off at the scheduled time, the job runs once when the service starts again.
+   * **Allow deletions in Mirror mode** – needed for unattended Mirror jobs. The *Mirror safety* threshold (8.6) still applies: if too many files would be deleted, the run stops instead.
+4. The preview at the bottom shows the next run times. Click **Save schedule**.
+
+Scheduled jobs show a **clock icon** in the job list. Changes are picked up by the running service within a few seconds. Untick **On** in the list to switch a schedule off without deleting it.
+
+### 10.4 Controlling the service
+
+| Button | What it does |
+|---|---|
+| **Start** | Starts the stopped service. |
+| **Pause / Resume** | While paused, no scheduled job starts. A job that is already running finishes. |
+| **Stop** | Stops the service. A running job is cancelled cleanly (it shows as *Cancelled* in the history). |
+| **Restart** | Stop + Start. |
+| **Uninstall** | Removes the service. Your schedule is kept for a later installation. |
+
+The **status pill** in the sidebar always shows what the service is doing:
+
+| Pill | Meaning |
+|---|---|
+| 🟢 **Service running** · *Next: Music Backup · today 23:30* | Waiting for the next job (the dot pulses gently). |
+| 🔵 **Backing up: Music Backup** | A scheduled job is running right now (faster pulse). |
+| 🟠 **Service paused** | No job starts until you resume. |
+| ⚪ **Service stopped** / **Scheduler not set up** | Scheduled jobs do not run. |
+| 🔴 **Service error** | Click it to see the reason, e.g. a changed Windows password. |
+
+If you move the Oborcopy folder or unpack a new version somewhere else, the Service Manager tells you that the service still uses the old folder – click **Use this Oborcopy**.
+
+> **Before deleting the Oborcopy folder,** uninstall the service in the Service Manager.
+
+### 10.5 Checking scheduled runs
+
+* The Service Manager lists every scheduled job with its **next run**, **last run** and **result**. **Last run details** opens the detailed summary of the last run.
+* **Scheduled run history** opens the Run history filtered to runs started by the scheduler. There you can use **Show details** and **Open log file** as usual. In the normal Run history, the column *Started by* shows **Scheduler** or **You**.
+* **Service log** opens the service's own log (start, stop, schedule changes, every run).
+* If you start a job in Oborcopy while the service is running the same job, Oborcopy warns you first.
+
+### 10.6 The command-line tool
+
+Besides the window program, Oborcopy includes the command-line tool **`oborcopy-cli`**. It runs a saved job without a window – useful for scripts or your own scheduler.
 
 Example: `oborcopy-cli --job "Music Backup" --yes` runs the job *Music Backup* and allows deletions.
 
@@ -398,7 +467,7 @@ Example: `oborcopy-cli --job "Music Backup" --yes` runs the job *Music Backup* a
 
 When it finishes, `oborcopy-cli` returns a **result code**: 0 = nothing to do, 1 = files copied, 2 = files deleted, 3 = both, 8 = some files failed, 16 = the run could not be done or was stopped.
 
-### 10.2 Windows: weekly backup with the Task Scheduler
+### 10.7 Windows: weekly backup with the Task Scheduler
 
 1. Press the **Windows key**, type **Task Scheduler** and open it.
 2. Click **Create Basic Task…** on the right.
@@ -411,7 +480,7 @@ When it finishes, `oborcopy-cli` returns a **result code**: 0 = nothing to do, 1
 
 Make sure the backup disk is connected at that time. Each automatic run appears in Oborcopy's **Run history** with its full summary.
 
-### 10.3 Linux: weekly backup with cron
+### 10.8 Linux: weekly backup with cron
 
 Open the cron table with `crontab -e` and add this line (Sunday 20:00 – use the path where you unpacked Oborcopy):
 
@@ -428,6 +497,8 @@ Open the cron table with `crontab -e` and add this line (Sunday 20:00 – use th
 | Jobs | `%LOCALAPPDATA%\Oborcopy\jobs\` | `~/.config/Oborcopy/jobs/` |
 | Program settings (theme, window size) | `%LOCALAPPDATA%\Oborcopy\settings.json` | `~/.config/Oborcopy/settings.json` |
 | Log files and run reports | `%LOCALAPPDATA%\Oborcopy\logs\` | `~/.local/share/Oborcopy/logs/` |
+| Scheduler: schedule, status and service log | `%LOCALAPPDATA%\Oborcopy\service\` | `~/.config/Oborcopy/service/` |
+| Scheduler service definition | Windows *Services* (`Oborcopy`) | `~/.config/systemd/user/oborcopy.service` |
 
 * *File → Open log folder* opens the log folder directly.
 * Each run writes a readable **`.log`** file and a **`.json`** report (used for the Run history).
@@ -488,7 +559,13 @@ Install the basic graphics libraries of your distribution, e.g. on Ubuntu:
 `sudo apt install libgl1 libegl1 libxkbcommon-x11-0 libfontconfig1`
 
 **Where do I find out what happened in an automatic run?**
-Open Oborcopy → **Run history**, or look into the log folder.
+Open Oborcopy → **Run history** (column *Started by* = **Scheduler**), or the Service Manager → **Last run details** / **Service log**.
+
+**A scheduled backup did not run.**
+Check the status pill: the service must be **running** and not paused, and the schedule must be switched **On**. Was the computer off or asleep? Then the job runs after start-up only if *Run a missed backup once after start-up* is ticked. Was the backup disk connected? The **Service log** shows every start and its result.
+
+**The Service Manager shows "Windows could not log on the service".**
+Your Windows password has changed. Click **Update password…** and enter the new password.
 
 ---
 
@@ -503,6 +580,7 @@ Open Oborcopy → **Run history**, or look into the log folder.
 | `Ctrl+N` | New job |
 | `Ctrl+S` | Save job (also happens automatically) |
 | `Ctrl+H` | Run history |
+| `Ctrl+M` | Service Manager (scheduled backups) |
 | `Alt+F4` | Exit (Windows; on Linux also `Ctrl+Q`) |
 | `Alt+C`, `Alt+S` | In the confirmation window: tick the check box, start the sync |
 
@@ -528,8 +606,9 @@ Open Oborcopy → **Run history**, or look into the log folder.
 | **FAT / exFAT** | File systems used by USB sticks and many external disks; they store file times in 2-second steps. |
 | **Time tolerance** | How much file times may differ and still count as equal. |
 | **Archive folder** | `.oborcopy-archive` in the destination – receives deleted files if this option is on. |
+| **Oborcopy Scheduler** | The background service that runs your jobs at set times, also when Oborcopy is closed. |
 | **Log file** | Text file with everything that happened during a run. |
 
 ---
 
-<p align="center"><em>Oborcopy 1.0.0 – User Guide</em></p>
+<p align="center"><em>Oborcopy 1.1.0 – User Guide</em></p>

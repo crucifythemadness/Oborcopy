@@ -25,6 +25,8 @@ qt_add_library(oborcopy_core STATIC
     FileCopier.h FileCopier.cpp
     SyncExecutor.h SyncExecutor.cpp
     SyncEngine.h SyncEngine.cpp
+    Schedule.h Schedule.cpp
+    ServiceFiles.h ServiceFiles.cpp
     ${OBORCOPY_GENERATED_DIR}/buildinfo.cpp
 )
 

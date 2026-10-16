@@ -140,6 +140,7 @@ QJsonObject RunReport::toJson() const
             {"destination", destination},
             {"mode", toString(mode)},
             {"dryRun", dryRun},
+            {"trigger", scheduled ? "scheduled" : "manual"},
             {"started", started.toString(Qt::ISODateWithMs)},
             {"finished", finished.toString(Qt::ISODateWithMs)},
             {"status", kStatusKeys[int(status)]},
@@ -158,6 +159,7 @@ RunReport RunReport::fromJson(const QJsonObject &o)
     r.mode = o.value("mode").toString() == QLatin1String("Mirror") ? SyncMode::Mirror
                                                                   : SyncMode::Update;
     r.dryRun = o.value("dryRun").toBool();
+    r.scheduled = o.value("trigger").toString() == QLatin1String("scheduled");
     r.started = QDateTime::fromString(o.value("started").toString(), Qt::ISODateWithMs);
     r.finished = QDateTime::fromString(o.value("finished").toString(), Qt::ISODateWithMs);
     r.status = fromKey(o.value("status").toString(), kStatusKeys, RunStatus::Failed);

@@ -21,6 +21,10 @@ qt_add_executable(Oborcopy WIN32
     PreviewDialog.h PreviewDialog.cpp
     SummaryDialog.h SummaryDialog.cpp
     HistoryDialog.h HistoryDialog.cpp
+    ServiceController.h ServiceController.cpp
+    ServiceStatusPill.h ServiceStatusPill.cpp
+    ServiceDialog.h ServiceDialog.cpp
+    ScheduleEditorDialog.h ScheduleEditorDialog.cpp
     AboutDialog.h AboutDialog.cpp
     MainWindow.h MainWindow.cpp
     ${OBORCOPY_RC}
@@ -32,6 +36,12 @@ qt_add_resources(Oborcopy "app_icons"
     FILES ${CMAKE_SOURCE_DIR}/resources/oborcopy.png)
 
 target_link_libraries(Oborcopy PRIVATE oborcopy_core Qt6::Widgets)
+
+if(WIN32)
+    # Service control manager, elevation (ShellExecuteEx) and GetUserNameEx.
+    target_link_libraries(Oborcopy PRIVATE advapi32 shell32 secur32)
+    target_compile_definitions(Oborcopy PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
+endif()
 
 if(UNIX AND NOT APPLE)
     set_target_properties(Oborcopy PROPERTIES OUTPUT_NAME oborcopy)

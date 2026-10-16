@@ -24,6 +24,8 @@ class BasicOptionsPage;
 class JobListWidget;
 class PathPicker;
 class ProgressPanel;
+class ServiceController;
+class ServiceStatusPill;
 
 class MainWindow : public QMainWindow
 {
@@ -68,6 +70,8 @@ private:
     void showHistory();
     void openLastLog();
     void openLogFolder();
+    void showServiceManager(const QString &scheduleJob = QString());
+    void updateScheduleBadges();
     void setTheme(ThemeMode mode);
     void restoreSettings();
     void saveSettings();
@@ -81,6 +85,8 @@ private:
     ReportPtr m_lastReport;
     SyncController *m_sync;
     QTimer *m_saveTimer;
+    ServiceController *m_service;
+    ServiceStatusPill *m_servicePill = nullptr;
 
     QSplitter *m_splitter = nullptr;
     JobListWidget *m_jobs = nullptr;

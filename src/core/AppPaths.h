@@ -11,6 +11,8 @@ QString configDir();
 QString jobsDir();
 QString settingsFile();
 QString defaultLogDir();
+// Schedule, state and log of the scheduler service (see ServiceFiles.h).
+QString serviceDir();
 bool ensureDir(const QString &path);
 
 // Replaces characters that are not allowed in file names on Windows or Linux.

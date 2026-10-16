@@ -4,7 +4,7 @@
 #   bundle-linux.sh <install-prefix> <source-dir> <output-dir>
 set -euo pipefail
 
-PREFIX="$1"   # contains bin/oborcopy, bin/oborcopy-cli
+PREFIX="$1"   # contains bin/oborcopy, bin/oborcopy-cli, bin/oborcopy-service
 SRC="$2"      # repository root (packaging/, resources/)
 OUT="$3"
 
@@ -22,7 +22,7 @@ EXCLUDE='^(linux-vdso|ld-linux|libc\.so|libm\.so|libdl\.so|libpthread\.so|librt\
 copy_layout() {
     rm -rf "$OUT"
     mkdir -p "$DEST"/{bin,lib,plugins,share,LICENSES}
-    cp "$PREFIX/bin/oborcopy" "$PREFIX/bin/oborcopy-cli" "$DEST/bin/"
+    cp "$PREFIX/bin/oborcopy" "$PREFIX/bin/oborcopy-cli" "$PREFIX/bin/oborcopy-service" "$DEST/bin/"
     mkdir -p "$DEST/plugins/platforms"
     for p in libqxcb.so libqoffscreen.so libqminimal.so; do
         cp "$QT_PLUGINS/platforms/$p" "$DEST/plugins/platforms/"
@@ -48,7 +48,7 @@ collect_libs() {
 }
 
 set_rpaths() {
-    for f in "$DEST"/bin/oborcopy "$DEST"/bin/oborcopy-cli; do
+    for f in "$DEST"/bin/oborcopy "$DEST"/bin/oborcopy-cli "$DEST"/bin/oborcopy-service; do
         patchelf --set-rpath '$ORIGIN/../lib' "$f"
     done
     for f in "$DEST"/lib/*.so*; do

@@ -131,6 +131,7 @@ flowchart TB
 | `oborcopy_core` | `src/core` | Options, persistence, scanning, comparison, planning, copying, logging, reporting. No widgets. |
 | `Oborcopy` | `src/gui` | Qt Widgets application (Windows: `Oborcopy.exe`, Linux: `oborcopy`). |
 | `oborcopy-cli` | `src/cli` | Console front end for scripted/scheduled runs. Separate executable because a Windows GUI-subsystem program cannot reliably write to the calling console or make it wait. |
+| `oborcopy-service` | `src/service` | Oborcopy Scheduler: Windows service / systemd user service that runs scheduled jobs through `oborcopy-cli` (see 5.5). QtCore only. |
 | `tst_*` | `tests` | Unit and integration tests (CTest). |
 
 ### 5.2 Level 2 – core (`src/core`)
@@ -181,7 +182,25 @@ flowchart TB
 | `Theme`, `IconFactory`, `ModeCard`, `CollapsibleSection`, `GuiUtil` | Look & feel: Fusion style with light/dark palette and style sheet, runtime-painted vector icons, reusable widgets, formatting helpers |
 
 ### 5.4 Level 2 – CLI (`src/cli`)
-`CliRunner` parses options, loads the job (by name or file), runs `SyncEngine` with console callbacks and maps the result to an exit code.
+`CliRunner` parses options, loads the job (by name or file), runs `SyncEngine` with console callbacks and maps the result to an exit code. Hidden options for the scheduler: `--scheduled` marks the report (`"trigger": "scheduled"`), `--stdin-control` cancels the run when `cancel` or end-of-input arrives on stdin.
+
+### 5.5 Level 2 – Scheduler service (`src/service`)
+
+```
+Oborcopy (GUI, ServiceController) ──writes──> <configDir>/service/schedule.json
+            │  ◄──reads──── status.json (activity, heartbeat, current job, next runs)
+            │  ◄──reads──── state.json  (anchor, last run, result per job)
+            │  control: Windows SCM API  |  systemctl --user (+ SIGUSR1/2 for pause/resume)
+            ▼
+oborcopy-service (Scheduler loop) ──QProcess──> oborcopy-cli --job <name> --quiet --scheduled --stdin-control [--yes]
+```
+
+* **Runs as the user** on both platforms (Windows: service account = the user, password entered in the Windows credential prompt of the elevated `--install`; Linux: systemd *user* unit + linger). GUI and service therefore share `AppPaths` – jobs, logs and history need no extra configuration or ACLs.
+* `Scheduler` (portable): wakes at least every 5 s and exactly when a job is due, reloads `schedule.json` when its mtime changes, runs due jobs **sequentially**. Each entry has an *anchor* (last run end or the time its timing changed); next run = `ScheduleEntry::nextRun(anchor)`. A run that was missed while off is caught up once if `catchUp` is set, otherwise skipped after a 15-minute grace period. Control requests only set atomics (safe from signal handlers and the Windows control handler).
+* Stop during a run: `cancel` is written to the CLI's stdin, after 30 s the CLI is killed. If the service dies, the closed pipe makes the CLI cancel itself (no orphaned runs).
+* `WinService`: `StartServiceCtrlDispatcher`, accepts STOP / PAUSE / CONTINUE / SHUTDOWN. Elevated admin commands (`--install`, `--uninstall`, `--update-password`, `--set-path`) report through a result file. The install grants *Log on as a service*, sets restart-on-failure, delayed auto-start and a DACL that lets the user start/stop/pause without elevation.
+* `PosixDaemon`: `--foreground` under systemd (`KillMode=mixed` so only the service receives SIGTERM and can cancel the CLI cleanly).
+* GUI: `ServiceController` (polls every 2 s), `ServiceStatusPill` (sidebar), `ServiceDialog` (Service Manager), `ScheduleEditorDialog`; `HistoryDialog` shows *Started by* and filters scheduled runs.
 
 ---
 
@@ -473,6 +492,9 @@ The PDF is part of both deployment packages.
 | AD-8 | One JSON file per job | Easy to back up, diff and pass to the CLI (`--job-file`). |
 | AD-9 | Runtime-painted icons | No image-format plugins needed; sharp on high-DPI. |
 | AD-10 | Minimum Qt 6.4 | Allows building with the Ubuntu 24.04 system packages; newer APIs are guarded with `QT_VERSION_CHECK`. |
+| AD-11 | Scheduler service runs as the user, not as LocalSystem/root | Same jobs, logs and network shares as the GUI; no privileged process that could be misused to read other users' files; Linux needs no root at all. Cost: the Windows password is entered once (and again after a password change). |
+| AD-12 | Service runs jobs through `oborcopy-cli` in a child process | Keeps the service tiny (no sync engine in-process); a crashing or hanging job cannot take the scheduler down; reuses the CLI's exit codes and logs. |
+| AD-13 | File-based GUI ⇄ service contract (`schedule.json`, `status.json`, `state.json`) | Works identically on Windows and Linux without IPC sockets; atomic writes (`QSaveFile`); GUI and service can be started/stopped independently. |
 
 ---
 
@@ -494,3 +516,4 @@ The PDF is part of both deployment packages.
 | 0.2 (SW 0.1.0) | 2026-10-11 | Deployment packages: `deploy-win64` (windeployqt) and self-contained `deploy-linux` (bundled Qt, RPATH, launchers, desktop entry); package verification. |
 | 1.0 (SW 1.0.0) | 2026-10-11 | Release 1.0.0 – verified with a full music library sync on Windows. |
 | 1.1 (SW 1.0.0) | 2026-10-11 | User Guide (Markdown + PDF) with screenshots, included in both packages. UI fixes: "&" in Advanced section titles, width of the job name dialog, "file(s)" label. |
+| 1.2 (SW 1.1.0) | 2026-10-16 | Oborcopy Scheduler service (`oborcopy-service`, 5.5): Windows service / systemd user service, Service Manager and status pill in the GUI, schedules (hourly/daily/weekly/monthly, catch-up), scheduled runs in the history. Linux folder dialog lists mounted volumes. |

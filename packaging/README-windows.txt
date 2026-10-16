@@ -11,7 +11,15 @@ START
   Double-click Oborcopy.exe. No installation is needed; keep all files of
   this folder together (the DLLs and sub-folders are required).
 
-COMMAND LINE (for scheduled backups)
+SCHEDULED BACKUPS (Oborcopy Scheduler service)
+  In Oborcopy: Service > Service Manager (Ctrl+M) > Install service.
+  Windows asks once for administrator permission and your Windows password;
+  the service "Oborcopy Scheduler" then runs your scheduled jobs under your
+  account - also when Oborcopy is closed. See chapter 10 of the user guide.
+  Before deleting or moving this folder, uninstall the service in the
+  Service Manager (or click "Use this Oborcopy" there after moving it).
+
+COMMAND LINE (for scripts or your own scheduler)
   oborcopy-cli.exe --list-jobs
   oborcopy-cli.exe --job "Music Backup" --dry-run     (show what would happen)
   oborcopy-cli.exe --job "Music Backup" --yes         (run, allow deletions in Mirror mode)
@@ -28,6 +36,7 @@ WHERE ARE MY SETTINGS?
   Jobs      %LOCALAPPDATA%\Oborcopy\jobs\*.json
   Settings  %LOCALAPPDATA%\Oborcopy\settings.json
   Logs      %LOCALAPPDATA%\Oborcopy\logs\  (one .log and one .json report per run)
+  Service   %LOCALAPPDATA%\Oborcopy\service\  (schedule, status, service.log)
 
   Portable use: set the environment variable OBORCOPY_CONFIG_DIR to a folder
   (e.g. on a USB stick) and everything is stored there.

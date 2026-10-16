@@ -21,7 +21,16 @@ START
   menu (for the current user, pointing to this folder). Keep the folder
   where it is afterwards, or run the script again after moving it.
 
-COMMAND LINE (for scheduled backups)
+SCHEDULED BACKUPS (Oborcopy Scheduler service)
+  In Oborcopy: Service > Service Manager (Ctrl+M) > Install service.
+  This creates the systemd user service "oborcopy.service" for your account
+  (no root needed) which runs your scheduled jobs - also when Oborcopy is
+  closed. Check it with:  systemctl --user status oborcopy
+  See chapter 10 of the user guide. Before deleting or moving this folder,
+  uninstall the service in the Service Manager (or click "Use this Oborcopy"
+  there after moving it).
+
+COMMAND LINE (for scripts or your own scheduler)
   ./oborcopy-cli --list-jobs
   ./oborcopy-cli --job "Music Backup" --dry-run     (show what would happen)
   ./oborcopy-cli --job "Music Backup" --yes         (run, allow deletions in Mirror mode)
@@ -37,6 +46,7 @@ WHERE ARE MY SETTINGS?
   Jobs      ~/.config/Oborcopy/jobs/*.json
   Settings  ~/.config/Oborcopy/settings.json
   Logs      ~/.local/share/Oborcopy/logs/  (one .log and one .json report per run)
+  Service   ~/.config/Oborcopy/service/  (schedule, status, service.log)
 
   Portable use: set OBORCOPY_CONFIG_DIR to a folder and everything is stored there.
 

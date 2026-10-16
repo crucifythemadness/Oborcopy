@@ -10,6 +10,9 @@
 #include <QLocale>
 
 #include <cstdio>
+#include <iostream>
+#include <string>
+#include <thread>
 
 namespace obor {
 
@@ -50,7 +53,12 @@ std::optional<CliRunner::Options> CliRunner::parse(const QStringList &arguments)
     const QCommandLineOption force("force", "Run even if the deletion threshold is exceeded.");
     const QCommandLineOption quiet({"q", "quiet"}, "Print only the summary and errors.");
     const QCommandLineOption verbose({"v", "verbose"}, "Print every log line.");
-    parser.addOptions({job, file, list, dry, yes, force, quiet, verbose, help, version});
+    QCommandLineOption scheduled("scheduled", "Mark the run as started by the scheduler service.");
+    QCommandLineOption stdinControl("stdin-control", "Cancel the run when 'cancel' is read from stdin.");
+    scheduled.setFlags(QCommandLineOption::HiddenFromHelp);
+    stdinControl.setFlags(QCommandLineOption::HiddenFromHelp);
+    parser.addOptions({job, file, list, dry, yes, force, quiet, verbose, scheduled, stdinControl,
+                       help, version});
     if (!parser.parse(arguments)) {
         m_err << "Error: " << parser.errorText() << "\n";
         return std::nullopt;
@@ -66,7 +74,8 @@ std::optional<CliRunner::Options> CliRunner::parse(const QStringList &arguments)
     }
 
     Options o{parser.value(job), parser.value(file), parser.isSet(list), parser.isSet(dry),
-              parser.isSet(yes), parser.isSet(force), parser.isSet(quiet), parser.isSet(verbose)};
+              parser.isSet(yes), parser.isSet(force), parser.isSet(quiet), parser.isSet(verbose),
+              parser.isSet(scheduled), parser.isSet(stdinControl)};
     if (!o.listJobs && o.jobName.isEmpty() && o.jobFile.isEmpty()) {
         m_err << "Error: use --job <name>, --job-file <path> or --list-jobs (see --help)\n";
         return std::nullopt;
@@ -100,7 +109,8 @@ int CliRunner::runJob(JobOptions job, const Options &options)
 {
     if (options.dryRun)
         job.copy.dryRun = true;
-    SyncControl control;
+    // Shared, because the stdin watcher thread may outlive this function.
+    const auto control = std::make_shared<SyncControl>();
     SyncCallbacks callbacks;
     if (!options.quiet)
         callbacks.progress = [this](const ProgressInfo &info) { printProgress(info); };
@@ -108,7 +118,11 @@ int CliRunner::runJob(JobOptions job, const Options &options)
         callbacks.log = [this](const QString &line) { m_out << "\r" << line << "\n"; m_out.flush(); };
     callbacks.confirm = [this, &options](const SyncPlan &plan) { return confirmPlan(plan, options); };
 
-    SyncEngine engine(job, control, callbacks);
+    if (options.stdinControl)
+        watchStdin(control);
+
+    SyncEngine engine(job, *control, callbacks);
+    engine.setScheduled(options.scheduled);
     const RunReport report = engine.run();
     printSummary(report);
     return exitCode(report);
@@ -129,6 +143,21 @@ bool CliRunner::confirmPlan(const SyncPlan &plan, const Options &options)
         return false;
     }
     return true;
+}
+
+void CliRunner::watchStdin(std::shared_ptr<SyncControl> control)
+{
+    // The scheduler service stops a run this way: the run ends as "Cancelled"
+    // with a complete log instead of being killed. The thread is detached because
+    // a blocking read cannot be interrupted; it ends with the process.
+    std::thread([control = std::move(control)]() {
+        std::string line;
+        while (std::getline(std::cin, line)) {
+            if (QString::fromStdString(line).trimmed() == QLatin1String("cancel"))
+                break;
+        }
+        control->cancel();
+    }).detach();
 }
 
 void CliRunner::printProgress(const ProgressInfo &info)

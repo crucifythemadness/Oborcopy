@@ -13,6 +13,11 @@
 #include "PathPicker.h"
 #include "PreviewDialog.h"
 #include "ProgressPanel.h"
+#include "Schedule.h"
+#include "ServiceController.h"
+#include "ServiceDialog.h"
+#include "ServiceFiles.h"
+#include "ServiceStatusPill.h"
 #include "SummaryDialog.h"
 
 #include <QActionGroup>
@@ -39,6 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_settings(AppSettings::load(AppPaths::settingsFile()))
     , m_sync(new SyncController(this))
     , m_saveTimer(new QTimer(this))
+    , m_service(new ServiceController(this))
 {
     setWindowTitle(AppInfo::name());
     setMinimumSize(980, 680);
@@ -55,6 +61,7 @@ MainWindow::MainWindow(QWidget *parent)
     buildMenus();
     connectSignals();
     restoreSettings();
+    updateScheduleBadges();
     m_jobs->reload(m_settings.lastJob);
 }
 
@@ -72,6 +79,7 @@ QWidget *MainWindow::buildSidebar()
     m_jobs = new JobListWidget(m_store, sidebar);
     auto *history = new QPushButton(IconFactory::icon(IconKind::History), tr("Run history"), sidebar);
     connect(history, &QPushButton::clicked, this, &MainWindow::showHistory);
+    m_servicePill = new ServiceStatusPill(sidebar);
 
     auto *layout = new QVBoxLayout(sidebar);
     layout->setContentsMargins(14, 16, 10, 14);
@@ -80,6 +88,7 @@ QWidget *MainWindow::buildSidebar()
     layout->addSpacing(8);
     layout->addWidget(GuiUtil::makeLabel(tr("JOBS"), QStringLiteral("SidebarHeader"), sidebar));
     layout->addWidget(m_jobs, 1);
+    layout->addWidget(m_servicePill);
     layout->addWidget(history);
     return sidebar;
 }
@@ -171,6 +180,15 @@ void MainWindow::buildMenus()
     file->addAction(tr("E&xit"), QKeySequence::Quit, this, &QWidget::close);
     buildRunMenu(bar);
 
+    QMenu *service = bar->addMenu(tr("&Service"));
+    service->addAction(IconFactory::icon(IconKind::History), tr("Service &Manager…"),
+                       QKeySequence(Qt::CTRL | Qt::Key_M), this, [this]() { showServiceManager(); });
+    service->addAction(tr("&Schedule this job…"), this, [this]() {
+        saveNow();
+        if (m_hasJob)
+            showServiceManager(m_job.name);
+    });
+
     QMenu *view = bar->addMenu(tr("&View"));
     QMenu *theme = view->addMenu(tr("&Theme"));
     auto *group = new QActionGroup(this);
@@ -226,6 +244,11 @@ void MainWindow::connectSignals()
     connect(m_progress, &ProgressPanel::detailsRequested, this, &MainWindow::showSummary);
     connect(m_progress, &ProgressPanel::openLogRequested, this, &MainWindow::openLastLog);
     connect(m_progress, &ProgressPanel::doneRequested, this, &MainWindow::showOptions);
+
+    connect(m_service, &ServiceController::stateChanged, this, [this](const ServiceState &state) {
+        m_servicePill->setState(state, m_service->busyText());
+    });
+    connect(m_servicePill, &ServiceStatusPill::clicked, this, [this]() { showServiceManager(); });
 }
 
 // ---------------------------------------------------------------- jobs
@@ -286,6 +309,11 @@ void MainWindow::saveNow()
 
 void MainWindow::onJobRenamed(const QString &oldName, const QString &newName)
 {
+    ServiceSchedule schedule = ServiceSchedule::load(ServiceInfo::schedulePath());
+    if (schedule.renameJob(oldName, newName)) {
+        schedule.save(ServiceInfo::schedulePath());
+        updateScheduleBadges();
+    }
     if (m_job.name != oldName)
         return;
     m_job.name = newName;
@@ -294,6 +322,11 @@ void MainWindow::onJobRenamed(const QString &oldName, const QString &newName)
 
 void MainWindow::onJobDeleted(const QString &name)
 {
+    ServiceSchedule schedule = ServiceSchedule::load(ServiceInfo::schedulePath());
+    if (schedule.removeJob(name)) {
+        schedule.save(ServiceInfo::schedulePath());
+        updateScheduleBadges();
+    }
     if (m_job.name == name)
         m_hasJob = false;
 }
@@ -309,6 +342,17 @@ void MainWindow::startSync(SyncController::StartMode mode)
     if (!problem.isEmpty()) {
         QMessageBox::warning(this, tr("Cannot start"), problem);
         return;
+    }
+    const ServiceState &service = m_service->state();
+    if (service.kind == ServiceState::Kind::Busy && service.status.currentJob == m_job.name) {
+        const auto answer = QMessageBox::warning(
+            this, tr("Job is running in the service"),
+            tr("The Oborcopy Scheduler service is running “%1” right now.\n\nRunning it here at the same "
+               "time can make both runs report errors. Start anyway?")
+                .arg(m_job.name),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+        if (answer != QMessageBox::Yes)
+            return;
     }
     m_previewRun = mode == SyncController::StartMode::Preview;
     m_progress->startRun(m_job.name, m_previewRun || m_job.copy.dryRun);
@@ -404,11 +448,27 @@ void MainWindow::showSummary()
 
 void MainWindow::showHistory()
 {
-    QStringList dirs{AppPaths::defaultLogDir()};
-    if (m_hasJob && !m_job.log.logDir.isEmpty())
-        dirs << m_job.log.logDir;
-    HistoryDialog dialog(dirs, this);
+    saveNow();
+    HistoryDialog dialog(HistoryDialog::logDirsFor(m_store), this);
     dialog.exec();
+}
+
+void MainWindow::showServiceManager(const QString &scheduleJob)
+{
+    ServiceDialog dialog(m_service, m_store, this);
+    connect(&dialog, &ServiceDialog::scheduleChanged, this, &MainWindow::updateScheduleBadges);
+    if (!scheduleJob.isEmpty())
+        QTimer::singleShot(0, &dialog, [&dialog, scheduleJob]() { dialog.scheduleJob(scheduleJob); });
+    dialog.exec();
+}
+
+void MainWindow::updateScheduleBadges()
+{
+    QHash<QString, QString> scheduled;
+    const ServiceSchedule schedule = ServiceSchedule::load(ServiceInfo::schedulePath());
+    for (const ScheduleEntry &entry : schedule.entries)
+        scheduled.insert(entry.job, entry.enabled ? entry.describe() : tr("%1 (disabled)").arg(entry.describe()));
+    m_jobs->setScheduled(scheduled);
 }
 
 void MainWindow::openLastLog()

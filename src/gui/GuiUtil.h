@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QColor>
+#include <QDateTime>
 #include <QIcon>
 #include <QLabel>
 #include <QString>
@@ -13,6 +14,8 @@ namespace obor::GuiUtil {
 QString formatBytes(qint64 bytes);
 QString formatDuration(qint64 seconds);
 QString formatCount(qint64 count);
+// "today 23:30", "tomorrow 07:00", "Mon 07:00", "12 Nov 23:30"
+QString formatWhen(const QDateTime &when);
 
 // "*.tmp; Thumbs.db" <-> {"*.tmp", "Thumbs.db"}
 QStringList splitPatterns(const QString &text);

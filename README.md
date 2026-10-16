@@ -7,7 +7,9 @@ features of *Robocopy* and *rsync*, with a preview before anything is deleted.
 * **Mirror** – make the destination an exact copy (deletes extras, with preview and confirmation)
 * FAT/exFAT timestamp tolerance, retries for locked files, pause/resume/cancel
 * Live progress, log file per run, detailed summary tree, run history
-* Job profiles in JSON, light/dark theme, command-line tool for scheduled runs
+* Job profiles in JSON, light/dark theme, command-line tool
+* **Oborcopy Scheduler** – background service (Windows service / systemd user service) that runs
+  jobs hourly, daily, weekly or monthly, also when the GUI is closed; managed from the GUI (`Ctrl+M`)
 
 ## Build
 

@@ -1,10 +1,14 @@
 #include "HistoryDialog.h"
 
+#include "AppPaths.h"
 #include "GuiUtil.h"
+#include "IconFactory.h"
+#include "JobStore.h"
 #include "RunReport.h"
 #include "SummaryDialog.h"
 #include "Theme.h"
 
+#include <QComboBox>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -24,6 +28,8 @@ namespace obor {
 namespace {
 
 constexpr int PathRole = Qt::UserRole + 1;
+constexpr int ScheduledRole = Qt::UserRole + 2;
+constexpr int kTriggerColumn = 2;
 constexpr int kMaxRuns = 500;
 
 std::optional<RunReport> readReport(const QString &path)
@@ -43,11 +49,15 @@ HistoryDialog::HistoryDialog(const QStringList &logDirs, QWidget *parent)
     : QDialog(parent)
     , m_dirs(logDirs)
     , m_table(new QTableWidget(this))
+    , m_filter(new QComboBox(this))
 {
     setWindowTitle(tr("Run history"));
-    resize(980, 520);
-    m_table->setColumnCount(5);
-    m_table->setHorizontalHeaderLabels({tr("Started"), tr("Job"), tr("Mode"), tr("Status"), tr("Result")});
+    resize(1060, 540);
+    m_table->setColumnCount(6);
+    m_table->setHorizontalHeaderLabels(
+        {tr("Started"), tr("Job"), tr("Started by"), tr("Mode"), tr("Status"), tr("Result")});
+    m_filter->addItems({tr("All runs"), tr("Started manually"), tr("Started by the scheduler")});
+    connect(m_filter, &QComboBox::currentIndexChanged, this, &HistoryDialog::applyFilter);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -66,7 +76,10 @@ HistoryDialog::HistoryDialog(const QStringList &logDirs, QWidget *parent)
     buttons->addWidget(close);
 
     auto *layout = new QVBoxLayout(this);
-    layout->addWidget(GuiUtil::makeLabel(tr("Previous runs"), QStringLiteral("Title"), this));
+    auto *header = new QHBoxLayout;
+    header->addWidget(GuiUtil::makeLabel(tr("Previous runs"), QStringLiteral("Title"), this), 1);
+    header->addWidget(m_filter);
+    layout->addLayout(header);
     layout->addWidget(m_table, 1);
     layout->addLayout(buttons);
 
@@ -101,8 +114,40 @@ void HistoryDialog::load()
     for (const QString &path : reportFiles())
         addRow(path);
     m_table->resizeColumnsToContents();
-    if (m_table->rowCount() > 0)
-        m_table->selectRow(0);
+    applyFilter();
+}
+
+void HistoryDialog::setFilter(Filter filter)
+{
+    m_filter->setCurrentIndex(int(filter));
+}
+
+void HistoryDialog::applyFilter()
+{
+    const auto filter = Filter(m_filter->currentIndex());
+    int first = -1;
+    for (int row = 0; row < m_table->rowCount(); ++row) {
+        const bool scheduled = m_table->item(row, 0)->data(ScheduledRole).toBool();
+        const bool visible = filter == Filter::All || (filter == Filter::Scheduled) == scheduled;
+        m_table->setRowHidden(row, !visible);
+        if (visible && first < 0)
+            first = row;
+    }
+    if (first >= 0)
+        m_table->selectRow(first);
+    else
+        m_table->clearSelection();
+}
+
+QStringList HistoryDialog::logDirsFor(const JobStore &store)
+{
+    QStringList dirs{AppPaths::defaultLogDir()};
+    for (const QString &name : store.jobNames()) {
+        const auto job = store.load(name);
+        if (job && !job->log.logDir.isEmpty() && !dirs.contains(job->log.logDir))
+            dirs << job->log.logDir;
+    }
+    return dirs;
 }
 
 void HistoryDialog::addRow(const QString &path)
@@ -114,14 +159,21 @@ void HistoryDialog::addRow(const QString &path)
     m_table->insertRow(row);
     const QString mode = toString(report->mode) + (report->dryRun ? tr(" (preview)") : QString());
     const QStringList cells = {QLocale().toString(report->started, QLocale::ShortFormat),
-                               report->jobName, mode, toString(report->status), report->summaryLine()};
+                               report->jobName,
+                               report->scheduled ? tr("Scheduler") : tr("You"),
+                               mode,
+                               toString(report->status),
+                               report->summaryLine()};
     for (int c = 0; c < cells.size(); ++c) {
         auto *item = new QTableWidgetItem(cells.at(c));
         item->setData(PathRole, path);
+        item->setData(ScheduledRole, report->scheduled);
         m_table->setItem(row, c, item);
     }
+    if (report->scheduled)
+        m_table->item(row, kTriggerColumn)->setIcon(IconFactory::icon(IconKind::History, Theme::colors().accent));
     if (report->status != RunStatus::Completed)
-        m_table->item(row, 3)->setForeground(report->status == RunStatus::Cancelled
+        m_table->item(row, 4)->setForeground(report->status == RunStatus::Cancelled
                                                  ? Theme::colors().muted : Theme::colors().warning);
 }
 

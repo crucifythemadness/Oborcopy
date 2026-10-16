@@ -60,7 +60,7 @@ void JobListWidget::reload(const QString &select)
     m_list->clear();
     const QStringList names = m_store.jobNames();
     for (const QString &name : names)
-        new QListWidgetItem(IconFactory::icon(IconKind::MirrorMode), name, m_list);
+        decorate(new QListWidgetItem(name, m_list));
     int row = names.indexOf(select);
     if (row < 0)
         row = 0;
@@ -80,6 +80,20 @@ void JobListWidget::setLocked(bool locked)
     m_list->setEnabled(!locked);
     for (QToolButton *button : std::as_const(m_buttons))
         button->setEnabled(!locked);
+}
+
+void JobListWidget::setScheduled(const QHash<QString, QString> &scheduled)
+{
+    m_scheduled = scheduled;
+    for (int i = 0; i < m_list->count(); ++i)
+        decorate(m_list->item(i));
+}
+
+void JobListWidget::decorate(QListWidgetItem *item) const
+{
+    const QString schedule = m_scheduled.value(item->text());
+    item->setIcon(IconFactory::icon(schedule.isEmpty() ? IconKind::MirrorMode : IconKind::History));
+    item->setToolTip(schedule.isEmpty() ? QString() : tr("Scheduled: %1").arg(schedule));
 }
 
 void JobListWidget::createJob()

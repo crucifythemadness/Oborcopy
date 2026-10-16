@@ -1,5 +1,6 @@
 #include "GuiUtil.h"
 
+#include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileDialog>
@@ -98,6 +99,23 @@ QString formatDuration(qint64 seconds)
 QString formatCount(qint64 count)
 {
     return QLocale().toString(count);
+}
+
+QString formatWhen(const QDateTime &when)
+{
+    if (!when.isValid())
+        return QStringLiteral("–");
+    const QString time = when.toString(QStringLiteral("HH:mm"));
+    const qint64 days = QDate::currentDate().daysTo(when.date());
+    if (days == 0)
+        return QObject::tr("today %1").arg(time);
+    if (days == 1)
+        return QObject::tr("tomorrow %1").arg(time);
+    if (days == -1)
+        return QObject::tr("yesterday %1").arg(time);
+    if (days > 1 && days < 7)
+        return QStringLiteral("%1 %2").arg(QLocale().dayName(when.date().dayOfWeek(), QLocale::ShortFormat), time);
+    return QStringLiteral("%1 %2").arg(QLocale().toString(when.date(), QStringLiteral("d MMM")), time);
 }
 
 QStringList splitPatterns(const QString &text)

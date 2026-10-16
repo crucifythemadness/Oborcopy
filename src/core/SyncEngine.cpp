@@ -84,6 +84,8 @@ void SyncEngine::logHeader()
     m_logger->info(QStringLiteral("Job: %1   Mode: %2%3")
                        .arg(m_job.name, toString(m_job.mode),
                             m_job.copy.dryRun ? QStringLiteral(" (preview only)") : QString()));
+    if (m_report.scheduled)
+        m_logger->info(QStringLiteral("Started by the Oborcopy Scheduler service"));
     m_logger->info(QStringLiteral("Source:      %1").arg(m_job.source));
     m_logger->info(QStringLiteral("Destination: %1").arg(m_job.destination));
 }

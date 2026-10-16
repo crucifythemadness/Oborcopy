@@ -34,6 +34,8 @@ public:
     SyncEngine(const JobOptions &job, SyncControl &control, SyncCallbacks callbacks);
     ~SyncEngine();
 
+    // Marks the run as started by the scheduler service (shown in the run history).
+    void setScheduled(bool scheduled) { m_report.scheduled = scheduled; }
     RunReport run();
 
 private:

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(Oborcopy
-    VERSION 1.0.0
+    VERSION 1.1.0
     DESCRIPTION "GUI file synchronisation and backup tool"
     LANGUAGES CXX)
 
@@ -18,6 +18,9 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Widgets)
 qt_standard_project_setup()
 
 option(OBORCOPY_BUILD_TESTS "Build the unit and integration tests" ON)
+
+# All programs in one folder: the GUI finds oborcopy-service and the service finds oborcopy-cli next to itself.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(OBORCOPY_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
 configure_file(cmake/version.h.in ${OBORCOPY_GENERATED_DIR}/version.h @ONLY)
