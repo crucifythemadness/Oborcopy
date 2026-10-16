@@ -26,6 +26,7 @@ qt_add_executable(Oborcopy WIN32
     ServiceDialog.h ServiceDialog.cpp
     ScheduleEditorDialog.h ScheduleEditorDialog.cpp
     AboutDialog.h AboutDialog.cpp
+    DevelopersDialog.h DevelopersDialog.cpp
     MainWindow.h MainWindow.cpp
     ${OBORCOPY_RC}
 )
@@ -33,7 +34,10 @@ qt_add_executable(Oborcopy WIN32
 qt_add_resources(Oborcopy "app_icons"
     PREFIX "/icons"
     BASE ${CMAKE_SOURCE_DIR}/resources
-    FILES ${CMAKE_SOURCE_DIR}/resources/oborcopy.png)
+    FILES
+        ${CMAKE_SOURCE_DIR}/resources/oborcopy.png
+        ${CMAKE_SOURCE_DIR}/resources/Claude_Logo.png
+        ${CMAKE_SOURCE_DIR}/resources/CrucifyTheMadness_Logo.png)
 
 target_link_libraries(Oborcopy PRIVATE oborcopy_core Qt6::Widgets)
 

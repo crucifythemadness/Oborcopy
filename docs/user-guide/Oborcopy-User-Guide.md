@@ -134,6 +134,8 @@ A **dot** in front of *Source* and *Destination* shows whether the folder can be
 
 **Preview** and **Start sync** (and `F5`/`F6`) are only available while both dots are green. The line at the bottom of the window tells you which folder is missing.
 
+![Destination offline – Preview and Start sync are disabled](images/17-offline.png)
+
 ### 4.2 The Basic options
 
 | Option | Meaning | Recommendation |
@@ -410,6 +412,8 @@ The service runs one job at a time with `oborcopy-cli` and writes the normal log
    **Linux:** nothing to confirm – no root password is needed. Oborcopy also enables *linger*, so the service keeps running after you log out and starts at boot. If your system does not allow that, Oborcopy shows a note; the service then runs while you are logged in.
 4. The status changes to **Service running**.
 
+![The Service Manager with two scheduled jobs](images/18-service-manager.png)
+
 > **Tip:** If you change your Windows password later, the service can no longer log on. The Service Manager then shows an error – click **Update password…**.
 
 ### 10.3 Scheduling a job
@@ -424,6 +428,8 @@ The service runs one job at a time with `oborcopy-cli` and writes the normal log
    * **Run a missed backup once after start-up** – if the computer was off at the scheduled time, the job runs once when the service starts again.
    * **Allow deletions in Mirror mode** – needed for unattended Mirror jobs. The *Mirror safety* threshold (8.6) still applies: if too many files would be deleted, the run stops instead.
 4. The preview at the bottom shows the next run times. Click **Save schedule**.
+
+![Editing a schedule](images/19-schedule-editor.png)
 
 Scheduled jobs show a **clock icon** in the job list. Changes are picked up by the running service within a few seconds. Untick **On** in the list to switch a schedule off without deleting it.
 
@@ -596,9 +602,11 @@ Your Windows password has changed. Click **Update password…** and enter the ne
 
 ### 14.1 Version information
 
-*Help → About Oborcopy* shows the version, the build date and technical details – please include them when you report a problem.
+*Help → About Oborcopy* shows the version, the build date and technical details – please include them when you report a problem. *Help → About Developers* shows who built Oborcopy, with links.
 
 ![About Oborcopy](images/14-about.png)
+
+![About Developers](images/20-about-developers.png)
 
 ---
 

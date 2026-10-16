@@ -5,6 +5,7 @@
 #include "AppInfo.h"
 #include "AppPaths.h"
 #include "BasicOptionsPage.h"
+#include "DevelopersDialog.h"
 #include "GuiUtil.h"
 #include "HistoryDialog.h"
 #include "IconFactory.h"
@@ -206,6 +207,7 @@ void MainWindow::buildMenus()
 
     QMenu *help = bar->addMenu(tr("&Help"));
     help->addAction(tr("&About Oborcopy"), this, [this]() { AboutDialog(this).exec(); });
+    help->addAction(tr("About &Developers"), this, [this]() { DevelopersDialog(this).exec(); });
     help->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
 }
 
