@@ -33,6 +33,7 @@ AboutDialog::AboutDialog(QWidget *parent)
                                                                             QStringLiteral(QT_VERSION_STR))));
     facts->addRow(tr("Compiler:"), new QLabel(AppInfo::compiler()));
     facts->addRow(tr("System:"), new QLabel(AppInfo::platform()));
+    facts->addRow(tr("License:"), new QLabel(tr("GNU General Public License v3.0")));
 
     auto *text = new QVBoxLayout;
     text->addWidget(name);

@@ -67,6 +67,7 @@ add_extras() {
     cp "$SRC/resources/oborcopy.png" "$DEST/share/"
     sed "s/@VERSION@/$VERSION/g" "$SRC/packaging/README-linux.txt" > "$DEST/README.txt"
     cp "$SRC"/packaging/LICENSES/* "$DEST/LICENSES/"
+    cp "$SRC/LICENSE" "$DEST/LICENSE.txt"
     cp "$SRC/docs/user-guide/Oborcopy-User-Guide.pdf" "$DEST/"
     sed -i 's/\r$//' "$DEST/oborcopy" "$DEST/oborcopy-cli" "$DEST/install-desktop-entry.sh" "$DEST/README.txt"
 }

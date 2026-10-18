@@ -29,6 +29,7 @@ foreach ($exe in "Oborcopy.exe", "oborcopy-cli.exe", "oborcopy-service.exe") {
 (Get-Content "$root\packaging\README-windows.txt" -Raw).Replace("@VERSION@", $version) |
     Set-Content -Encoding utf8 "$deploy\README.txt"
 Copy-Item -Recurse "$root\packaging\LICENSES" "$deploy\LICENSES"
+Copy-Item "$root\LICENSE" "$deploy\LICENSE.txt"
 Copy-Item "$root\docs\user-guide\Oborcopy-User-Guide.pdf" $deploy
 
 $zip = "$root\Oborcopy-$version-win64.zip"

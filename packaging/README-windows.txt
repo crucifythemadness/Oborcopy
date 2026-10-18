@@ -42,4 +42,5 @@ WHERE ARE MY SETTINGS?
   (e.g. on a USB stick) and everything is stored there.
 
 LICENSES
-  Oborcopy uses the Qt framework under the GNU LGPL v3, see LICENSES\.
+  Oborcopy is free software under the GNU General Public License v3.0,
+  see LICENSE.txt. It uses the Qt framework under the GNU LGPL v3, see LICENSES\.

@@ -47,3 +47,8 @@ oborcopy-cli --job "Music Backup" --yes
 * **User Guide:** [docs/user-guide/Oborcopy-User-Guide.md](docs/user-guide/Oborcopy-User-Guide.md)
   (PDF: [Oborcopy-User-Guide.pdf](docs/user-guide/Oborcopy-User-Guide.pdf), rebuilt with `.\scripts\build-user-guide.ps1`)
 * **Architecture:** [Oborcopy-SAD.md](Oborcopy-SAD.md)
+
+## License
+
+Oborcopy is free software under the [GNU General Public License v3.0](LICENSE).
+It uses the [Qt framework](https://www.qt.io/) under the GNU LGPL v3.
