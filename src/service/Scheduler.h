@@ -35,11 +35,19 @@ private:
         int exitCode = -1;
     };
 
+    struct Due
+    {
+        QDateTime at;
+        int attempt = 0; // 0 = regular run, n = retry n
+    };
+
     void reloadSchedule(bool force);
     void reconcile();
-    QDateTime nextDue(const ScheduleEntry &entry) const;
+    // Regular next run or a pending retry, whichever comes first.
+    Due nextDue(const ScheduleEntry &entry) const;
     std::optional<int> dueEntry(const QDateTime &now) const;
-    void runEntry(const ScheduleEntry &entry, const QDateTime &due);
+    void runEntry(const ScheduleEntry &entry, const Due &due);
+    void scheduleRetry(const ScheduleEntry &entry, const Due &due, const QString &status);
     Result runCli(const ScheduleEntry &entry);
     void saveState();
     void writeStatus(bool force);

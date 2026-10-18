@@ -29,6 +29,20 @@ COPY docker/bundle-linux.sh ./docker/bundle-linux.sh
 RUN sed -i 's/\r$//' docker/bundle-linux.sh \
  && bash docker/bundle-linux.sh /out /src /deploy
 
+# systemd as PID 1 with the release package and the service test harness
+# (scripts/test-linux-service.ps1 runs the real systemd user-service flow).
+FROM build AS systemd-test
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends systemd systemd-sysv dbus dbus-user-session \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd -m -s /bin/bash tester \
+ && mkdir -p /home/tester/pkg \
+ && tar xzf /deploy/oborcopy-*-linux-x86_64.tar.gz -C /home/tester/pkg \
+ && cp build/linux/oborcopy-servicectl-test /home/tester/pkg/oborcopy-*/bin/ \
+ && chown -R tester:tester /home/tester
+STOPSIGNAL SIGRTMIN+3
+CMD ["/sbin/init"]
+
 # Minimal stage that only carries the binaries (extracted by scripts/build-linux.ps1).
 FROM scratch AS artifacts
 COPY --from=build /out/bin /

@@ -10,9 +10,14 @@
 #include <QLocale>
 
 #include <cstdio>
-#include <iostream>
 #include <string>
 #include <thread>
+
+#ifdef Q_OS_WIN
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace obor {
 
@@ -150,11 +155,24 @@ void CliRunner::watchStdin(std::shared_ptr<SyncControl> control)
     // The scheduler service stops a run this way: the run ends as "Cancelled"
     // with a complete log instead of being killed. The thread is detached because
     // a blocking read cannot be interrupted; it ends with the process.
+    // Raw read() on purpose: a thread blocked in std::cin/fgets holds the stdin
+    // lock, and glibc's exit() waits for that lock - the CLI would never exit.
     std::thread([control = std::move(control)]() {
-        std::string line;
-        while (std::getline(std::cin, line)) {
-            if (QString::fromStdString(line).trimmed() == QLatin1String("cancel"))
+        std::string pending;
+        char buffer[256];
+        for (;;) {
+#ifdef Q_OS_WIN
+            const int n = ::_read(0, buffer, sizeof(buffer));
+#else
+            const ssize_t n = ::read(0, buffer, sizeof(buffer));
+#endif
+            if (n <= 0)
+                break; // end of input: the service is gone
+            pending.append(buffer, std::size_t(n));
+            if (QString::fromStdString(pending).contains(QLatin1String("cancel")))
                 break;
+            if (pending.size() > 4096)
+                pending.erase(0, pending.size() - 16);
         }
         control->cancel();
     }).detach();

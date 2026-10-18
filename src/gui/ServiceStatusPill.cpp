@@ -43,10 +43,14 @@ void ServiceStatusPill::setState(const ServiceState &state, const QString &busyT
     m_title = busyText.isEmpty() ? state.title() : busyText;
     switch (state.kind) {
     case ServiceState::Kind::Running:
-        m_subtitle = state.status.nextRuns.isEmpty()
-                         ? tr("No job scheduled")
-                         : tr("Next: %1 · %2").arg(state.status.nextRuns.first().job,
-                                                    GuiUtil::formatWhen(state.status.nextRuns.first().at));
+        if (state.status.nextRuns.isEmpty()) {
+            m_subtitle = tr("No job scheduled");
+        } else {
+            const NextRun &next = state.status.nextRuns.first();
+            m_subtitle = tr("Next: %1 · %2%3")
+                             .arg(next.job, GuiUtil::formatWhen(next.at),
+                                  next.attempt > 0 ? tr(" (retry %1)").arg(next.attempt) : QString());
+        }
         if (!state.responding)
             m_subtitle = tr("Not responding");
         break;

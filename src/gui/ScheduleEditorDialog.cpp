@@ -48,6 +48,9 @@ ScheduleEditorDialog::ScheduleEditorDialog(const ScheduleEntry &entry, const QSt
     , m_enabled(new QCheckBox(tr("Enabled"), this))
     , m_catchUp(new QCheckBox(tr("Run a missed backup once after start-up\n(e.g. when the computer was off at the scheduled time)"), this))
     , m_allowDeletions(new QCheckBox(tr("Allow deletions in Mirror mode\n(the job's deletion safety threshold still applies)"), this))
+    , m_retry(new QCheckBox(tr("Retry if the run fails\n(e.g. the backup disk is not connected yet)"), this))
+    , m_retryCount(new QSpinBox(this))
+    , m_retryInterval(new QSpinBox(this))
     , m_preview(GuiUtil::makeLabel(QString(), QStringLiteral("Muted"), this))
 {
     setWindowTitle(entry.job.isEmpty() ? tr("Schedule a job") : tr("Edit schedule"));
@@ -127,6 +130,20 @@ ScheduleEditorDialog::ScheduleEditorDialog(const ScheduleEntry &entry, const QSt
     m_enabled->setChecked(entry.enabled);
     m_catchUp->setChecked(entry.catchUp);
     m_allowDeletions->setChecked(entry.allowDeletions);
+    m_retry->setChecked(entry.retryEnabled);
+    m_retryCount->setRange(1, 24);
+    m_retryCount->setValue(entry.retryCount);
+    m_retryInterval->setRange(1, 240);
+    m_retryInterval->setValue(entry.retryIntervalMinutes);
+    m_retryRow = new QWidget(this);
+    auto *retryRow = new QHBoxLayout(m_retryRow);
+    retryRow->setContentsMargins(24, 0, 0, 0);
+    retryRow->addWidget(new QLabel(tr("Up to"), m_retryRow));
+    retryRow->addWidget(m_retryCount);
+    retryRow->addWidget(new QLabel(tr("times, every"), m_retryRow));
+    retryRow->addWidget(m_retryInterval);
+    retryRow->addWidget(new QLabel(tr("minutes"), m_retryRow));
+    retryRow->addStretch();
     m_preview->setWordWrap(true);
 
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
@@ -145,6 +162,8 @@ ScheduleEditorDialog::ScheduleEditorDialog(const ScheduleEntry &entry, const QSt
     form->addRow(QString(), m_enabled);
     form->addRow(QString(), m_catchUp);
     form->addRow(QString(), m_allowDeletions);
+    form->addRow(QString(), m_retry);
+    form->addRow(QString(), m_retryRow);
 
     auto *layout = new QVBoxLayout(this);
     layout->addWidget(GuiUtil::makeLabel(windowTitle(), QStringLiteral("Title"), this));
@@ -162,6 +181,13 @@ ScheduleEditorDialog::ScheduleEditorDialog(const ScheduleEntry &entry, const QSt
     connect(m_dayOfMonth, &QSpinBox::valueChanged, this, &ScheduleEditorDialog::updatePreview);
     connect(m_time, &QTimeEdit::timeChanged, this, &ScheduleEditorDialog::updatePreview);
     connect(m_enabled, &QCheckBox::toggled, this, &ScheduleEditorDialog::updatePreview);
+    connect(m_retry, &QCheckBox::toggled, this, [this](bool on) {
+        m_retryRow->setEnabled(on);
+        updatePreview();
+    });
+    connect(m_retryCount, &QSpinBox::valueChanged, this, &ScheduleEditorDialog::updatePreview);
+    connect(m_retryInterval, &QSpinBox::valueChanged, this, &ScheduleEditorDialog::updatePreview);
+    m_retryRow->setEnabled(entry.retryEnabled);
     updateVisibility();
 }
 
@@ -201,6 +227,9 @@ ScheduleEntry ScheduleEditorDialog::entry() const
     e.enabled = m_enabled->isChecked();
     e.catchUp = m_catchUp->isChecked();
     e.allowDeletions = m_allowDeletions->isChecked();
+    e.retryEnabled = m_retry->isChecked();
+    e.retryCount = m_retryCount->value();
+    e.retryIntervalMinutes = m_retryInterval->value();
     return e;
 }
 
@@ -216,12 +245,21 @@ void ScheduleEditorDialog::updatePreview()
         runs << GuiUtil::formatWhen(t);
     }
     m_ok->setEnabled(m_hasJobs && !runs.isEmpty());
-    if (runs.isEmpty())
+    if (runs.isEmpty()) {
         m_preview->setText(tr("⚠ This schedule never runs – choose at least one weekday."));
-    else
-        m_preview->setText(tr("<b>%1</b><br>Next runs: %2%3")
-                               .arg(e.describe().toHtmlEscaped(), runs.join(QStringLiteral(" · ")),
-                                    e.enabled ? QString() : tr(" <i>(disabled)</i>")));
+        return;
+    }
+    QString retry;
+    if (e.retryEnabled) {
+        const int total = e.retryCount * e.retryIntervalMinutes;
+        retry = tr("<br>If a run fails: up to %1 retries, every %2 min (for up to %3).")
+                    .arg(e.retryCount)
+                    .arg(e.retryIntervalMinutes)
+                    .arg(total >= 60 ? tr("%1 h %2 min").arg(total / 60).arg(total % 60) : tr("%1 min").arg(total));
+    }
+    m_preview->setText(tr("<b>%1</b><br>Next runs: %2%3%4")
+                           .arg(e.describe().toHtmlEscaped(), runs.join(QStringLiteral(" · ")),
+                                e.enabled ? QString() : tr(" <i>(disabled)</i>"), retry));
 }
 
 } // namespace obor

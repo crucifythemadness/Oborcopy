@@ -25,6 +25,9 @@ struct ScheduleEntry
     int dayOfMonth = 1;                  // Monthly: 1-31 (clamped to the month), 0 = last day
     bool catchUp = true;                 // run once after start-up when a run was missed
     bool allowDeletions = true;          // Mirror jobs may delete (the threshold still applies)
+    bool retryEnabled = false;           // retry a failed run (e.g. backup disk not connected yet)
+    int retryCount = 8;                  // 1-24 retries ...
+    int retryIntervalMinutes = 15;       // ... this many minutes apart (1-240)
 
     // First scheduled time strictly after 'after' (invalid if none, e.g. no weekday ticked).
     QDateTime nextRun(const QDateTime &after) const;

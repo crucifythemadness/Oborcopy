@@ -120,6 +120,9 @@ QString ScheduleEntry::fingerprint() const
     // "enabled" stays in: re-enabling an entry must not catch up runs from while it was off.
     o.remove(QStringLiteral("job"));
     o.remove(QStringLiteral("allowDeletions"));
+    o.remove(QStringLiteral("retryEnabled"));
+    o.remove(QStringLiteral("retryCount"));
+    o.remove(QStringLiteral("retryIntervalMinutes"));
     return QString::fromUtf8(QJsonDocument(o).toJson(QJsonDocument::Compact));
 }
 
@@ -136,7 +139,10 @@ QJsonObject ScheduleEntry::toJson() const
             {"weekdays", days},
             {"dayOfMonth", dayOfMonth},
             {"catchUp", catchUp},
-            {"allowDeletions", allowDeletions}};
+            {"allowDeletions", allowDeletions},
+            {"retryEnabled", retryEnabled},
+            {"retryCount", retryCount},
+            {"retryIntervalMinutes", retryIntervalMinutes}};
 }
 
 ScheduleEntry ScheduleEntry::fromJson(const QJsonObject &o)
@@ -160,6 +166,9 @@ ScheduleEntry ScheduleEntry::fromJson(const QJsonObject &o)
     e.dayOfMonth = std::clamp(o.value("dayOfMonth").toInt(e.dayOfMonth), 0, 31);
     e.catchUp = o.value("catchUp").toBool(e.catchUp);
     e.allowDeletions = o.value("allowDeletions").toBool(e.allowDeletions);
+    e.retryEnabled = o.value("retryEnabled").toBool(e.retryEnabled);
+    e.retryCount = std::clamp(o.value("retryCount").toInt(e.retryCount), 1, 24);
+    e.retryIntervalMinutes = std::clamp(o.value("retryIntervalMinutes").toInt(e.retryIntervalMinutes), 1, 240);
     return e;
 }
 

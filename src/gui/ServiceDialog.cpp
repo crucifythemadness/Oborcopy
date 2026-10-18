@@ -383,10 +383,16 @@ void ServiceDialog::refreshTable()
         const ScheduleEntry &entry = m_schedule.entries.at(row);
         const JobRunState run = m_runState.jobs.value(entry.job);
         const QDateTime anchor = run.anchor.isValid() && run.fingerprint == entry.fingerprint() ? run.anchor : now;
-        const QDateTime next = entry.enabled ? entry.nextRun(anchor) : QDateTime();
+        QDateTime next = entry.enabled ? entry.nextRun(anchor) : QDateTime();
+        const bool retrying = entry.enabled && entry.retryEnabled && run.retryAt.isValid()
+                              && (!next.isValid() || run.retryAt < next);
+        if (retrying)
+            next = run.retryAt;
         QString nextText = tr("Off");
         if (entry.enabled)
             nextText = !next.isValid() ? tr("Never") : (next <= now ? tr("due now") : GuiUtil::formatWhen(next));
+        if (retrying)
+            nextText += tr(" (retry %1 of %2)").arg(run.retryAttempt).arg(entry.retryCount);
         if (entry.enabled && !running && next.isValid())
             nextText += tr(" (service not running)");
 
@@ -395,7 +401,7 @@ void ServiceDialog::refreshTable()
                                    entry.describe(),
                                    nextText,
                                    run.lastRun.isValid() ? GuiUtil::formatWhen(run.lastRun) : tr("never"),
-                                   run.lastStatus};
+                                   retrying ? tr("%1 – retrying").arg(run.lastStatus) : run.lastStatus};
         for (int col = 0; col < ColumnCount; ++col) {
             QTableWidgetItem *item = m_table->item(row, col);
             if (!item) {

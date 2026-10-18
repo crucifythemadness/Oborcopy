@@ -45,6 +45,8 @@ struct JobRunState
     QString lastStatus;    // "Completed", "Completed with errors", "Cancelled", "Failed", ...
     QString lastReport;    // .json run report (opens the summary)
     int lastExitCode = -1;
+    int retryAttempt = 0;  // retries already scheduled after the last failed run
+    QDateTime retryAt;     // pending retry (invalid = none)
 
     QJsonObject toJson() const;
     static JobRunState fromJson(const QJsonObject &object);
@@ -66,6 +68,7 @@ struct NextRun
 {
     QString job;
     QDateTime at;
+    int attempt = 0; // 0 = regular run, n = retry n
 };
 
 struct ServiceStatus

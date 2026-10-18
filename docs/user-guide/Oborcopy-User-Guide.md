@@ -427,6 +427,7 @@ The service runs one job at a time with `oborcopy-cli` and writes the normal log
 3. Options:
    * **Run a missed backup once after start-up** – if the computer was off at the scheduled time, the job runs once when the service starts again.
    * **Allow deletions in Mirror mode** – needed for unattended Mirror jobs. The *Mirror safety* threshold (8.6) still applies: if too many files would be deleted, the run stops instead.
+   * **Retry if the run fails** – useful when the backup disk or NAS is sometimes not reachable yet, e.g. right after start-up. Choose how often and how far apart, e.g. *up to 8 times, every 15 minutes* (= for up to 2 hours). Only runs that **failed** are retried (folder or disk not reachable); a run that completed with some errors or was stopped by the Mirror safety threshold is not. The Service Manager shows a pending retry in *Next run*, e.g. *08:15 (retry 2 of 8)*.
 4. The preview at the bottom shows the next run times. Click **Save schedule**.
 
 ![Editing a schedule](images/19-schedule-editor.png)
@@ -578,7 +579,7 @@ Install the basic graphics libraries of your distribution, e.g. on Ubuntu:
 Open Oborcopy → **Run history** (column *Started by* = **Scheduler**), or the Service Manager → **Last run details** / **Service log**.
 
 **A scheduled backup did not run.**
-Check the status pill: the service must be **running** and not paused, and the schedule must be switched **On**. Was the computer off or asleep? Then the job runs after start-up only if *Run a missed backup once after start-up* is ticked. Was the backup disk connected? The **Service log** shows every start and its result.
+Check the status pill: the service must be **running** and not paused, and the schedule must be switched **On**. Was the computer off or asleep? Then the job runs after start-up only if *Run a missed backup once after start-up* is ticked. Was the backup disk connected? Tick *Retry if the run fails* so the job tries again a little later. The **Service log** shows every start and its result.
 
 **The Service Manager shows "Windows could not log on the service".**
 Your Windows password has changed. Click **Update password…** and enter the new password.

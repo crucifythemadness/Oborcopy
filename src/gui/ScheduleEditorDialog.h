@@ -47,6 +47,10 @@ private:
     QCheckBox *m_enabled;
     QCheckBox *m_catchUp;
     QCheckBox *m_allowDeletions;
+    QCheckBox *m_retry;
+    QWidget *m_retryRow = nullptr;
+    QSpinBox *m_retryCount;
+    QSpinBox *m_retryInterval;
     QLabel *m_preview;
     QPushButton *m_ok = nullptr;
     bool m_hasJobs = false;

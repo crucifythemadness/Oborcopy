@@ -114,6 +114,44 @@ private slots:
         QVERIFY(changed.fingerprint() != e.fingerprint());
     }
 
+    void retryOptions()
+    {
+        const ScheduleEntry defaults;
+        QVERIFY(!defaults.retryEnabled);
+        QCOMPARE(defaults.retryCount, 8);
+        QCOMPARE(defaults.retryIntervalMinutes, 15);
+
+        ScheduleEntry e = entry(Frequency::Daily, QTime(23, 30));
+        e.retryEnabled = true;
+        e.retryCount = 3;
+        e.retryIntervalMinutes = 5;
+        const ScheduleEntry back = ScheduleEntry::fromJson(e.toJson());
+        QVERIFY(back.retryEnabled);
+        QCOMPARE(back.retryCount, 3);
+        QCOMPARE(back.retryIntervalMinutes, 5);
+        // Retry settings are not timing: changing them must not re-anchor the schedule.
+        QCOMPARE(back.fingerprint(), entry(Frequency::Daily, QTime(23, 30)).fingerprint());
+
+        QJsonObject wild = e.toJson();
+        wild["retryCount"] = 999;
+        wild["retryIntervalMinutes"] = 0;
+        QCOMPARE(ScheduleEntry::fromJson(wild).retryCount, 24);
+        QCOMPARE(ScheduleEntry::fromJson(wild).retryIntervalMinutes, 1);
+        // Old schedule files without the keys keep the defaults.
+        QVERIFY(!ScheduleEntry::fromJson(QJsonObject{{"job", "Old"}}).retryEnabled);
+
+        JobRunState state;
+        state.retryAttempt = 2;
+        state.retryAt = at(2026, 10, 18, 8, 15);
+        const JobRunState stateBack = JobRunState::fromJson(state.toJson());
+        QCOMPARE(stateBack.retryAttempt, 2);
+        QCOMPARE(stateBack.retryAt, state.retryAt);
+
+        ServiceStatus status;
+        status.nextRuns << NextRun{QStringLiteral("Music"), at(2026, 10, 18, 8, 15), 2};
+        QCOMPARE(ServiceStatus::fromJson(status.toJson()).nextRuns.at(0).attempt, 2);
+    }
+
     void scheduleFile()
     {
         QTemporaryDir dir;

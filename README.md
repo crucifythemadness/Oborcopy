@@ -24,6 +24,7 @@ Linux (via Docker Desktop):
 
 ```powershell
 .\scripts\build-linux.ps1            # builds + tests in Ubuntu 24.04, binaries in build\linux-out
+.\scripts\test-linux-service.ps1     # end-to-end test of the scheduler service with real systemd
 ```
 
 ## Deploy (ready-to-run packages)

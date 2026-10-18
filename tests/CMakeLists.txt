@@ -15,3 +15,14 @@ oborcopy_add_test(tst_jobstore)
 oborcopy_add_test(tst_planner)
 oborcopy_add_test(tst_syncengine)
 oborcopy_add_test(tst_schedule)
+
+# End-to-end test of the Linux scheduler service against a real systemd user
+# session (scripts/test-linux-service.ps1). Not registered with ctest.
+if(UNIX AND NOT APPLE)
+    qt_add_executable(oborcopy-servicectl-test
+        servicectl_harness.cpp
+        ${CMAKE_SOURCE_DIR}/src/gui/ServiceController.h
+        ${CMAKE_SOURCE_DIR}/src/gui/ServiceController.cpp)
+    target_include_directories(oborcopy-servicectl-test PRIVATE ${CMAKE_SOURCE_DIR}/src/gui)
+    target_link_libraries(oborcopy-servicectl-test PRIVATE oborcopy_core)
+endif()

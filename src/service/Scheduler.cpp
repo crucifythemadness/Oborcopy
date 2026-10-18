@@ -103,6 +103,8 @@ void Scheduler::reconcile()
         if (!state.anchor.isValid() || state.fingerprint != fingerprint) {
             state.anchor = now;
             state.fingerprint = fingerprint;
+            state.retryAt = {};
+            state.retryAttempt = 0;
         }
         jobs.insert(entry.job, state);
     }
@@ -110,9 +112,13 @@ void Scheduler::reconcile()
     saveState();
 }
 
-QDateTime Scheduler::nextDue(const ScheduleEntry &entry) const
+Scheduler::Due Scheduler::nextDue(const ScheduleEntry &entry) const
 {
-    return entry.nextRun(m_state.jobs.value(entry.job).anchor);
+    const JobRunState state = m_state.jobs.value(entry.job);
+    const QDateTime regular = entry.nextRun(state.anchor);
+    if (entry.retryEnabled && state.retryAt.isValid() && (!regular.isValid() || state.retryAt < regular))
+        return {state.retryAt, state.retryAttempt};
+    return {regular, 0};
 }
 
 std::optional<int> Scheduler::dueEntry(const QDateTime &now) const
@@ -123,7 +129,7 @@ std::optional<int> Scheduler::dueEntry(const QDateTime &now) const
         const ScheduleEntry &entry = m_schedule.entries.at(i);
         if (!entry.enabled)
             continue;
-        const QDateTime due = nextDue(entry);
+        const QDateTime due = nextDue(entry).at;
         if (due.isValid() && due <= now && (!best || due < bestDue)) {
             best = i;
             bestDue = due;
@@ -132,19 +138,22 @@ std::optional<int> Scheduler::dueEntry(const QDateTime &now) const
     return best;
 }
 
-void Scheduler::runEntry(const ScheduleEntry &entry, const QDateTime &due)
+void Scheduler::runEntry(const ScheduleEntry &entry, const Due &due)
 {
     JobRunState &state = m_state.jobs[entry.job];
     const QDateTime now = QDateTime::currentDateTime();
-    if (!entry.catchUp && due.secsTo(now) > kGraceSeconds) {
+    if (due.attempt == 0 && !entry.catchUp && due.at.secsTo(now) > kGraceSeconds) {
         m_log.info(QStringLiteral("Skipped missed run of '%1' (was due %2, catch-up is off)")
-                       .arg(entry.job, due.toString(Qt::ISODate)));
+                       .arg(entry.job, due.at.toString(Qt::ISODate)));
         state.anchor = now;
         saveState();
         return;
     }
 
-    m_log.info(QStringLiteral("Starting '%1' (due %2)").arg(entry.job, due.toString(Qt::ISODate)));
+    m_log.info(QStringLiteral("Starting '%1' (due %2%3)")
+                   .arg(entry.job, due.at.toString(Qt::ISODate),
+                        due.attempt > 0 ? QStringLiteral(", retry %1 of %2").arg(due.attempt).arg(entry.retryCount)
+                                        : QString()));
     state.lastStart = now;
     m_busyJob = entry.job;
     m_status.currentJob = entry.job;
@@ -164,6 +173,7 @@ void Scheduler::runEntry(const ScheduleEntry &entry, const QDateTime &due)
         done.lastReport.chop(4);
         done.lastReport += QStringLiteral(".json");
     }
+    scheduleRetry(entry, due, result.status);
     saveState();
     m_busyJob.clear();
     m_status.currentJob.clear();
@@ -173,6 +183,33 @@ void Scheduler::runEntry(const ScheduleEntry &entry, const QDateTime &due)
                    .arg(result.exitCode)
                    .arg(result.logFile.isEmpty() ? QString() : QStringLiteral(", log: ") + result.logFile));
     writeStatus(true);
+}
+
+// A failed run (e.g. backup disk not connected yet) is retried if the entry
+// allows it. Runs that completed - even with errors - or were cancelled (deletion
+// threshold, service stop) are not retried: that would bypass a safety stop.
+void Scheduler::scheduleRetry(const ScheduleEntry &entry, const Due &due, const QString &status)
+{
+    JobRunState &state = m_state.jobs[entry.job];
+    const bool failed = status == QLatin1String("Failed") || status == QLatin1String("Failed to start")
+                        || status == QLatin1String("Crashed");
+    state.retryAt = {};
+    if (!failed || !entry.retryEnabled || m_stop) {
+        state.retryAttempt = 0;
+        return;
+    }
+    const int done = due.attempt; // retries already made before this run
+    if (done >= entry.retryCount) {
+        m_log.info(QStringLiteral("No more retries for '%1' (%2 of %2 used)").arg(entry.job).arg(entry.retryCount));
+        state.retryAttempt = 0;
+        return;
+    }
+    state.retryAttempt = done + 1;
+    state.retryAt = QDateTime::currentDateTime().addSecs(qint64(entry.retryIntervalMinutes) * 60);
+    m_log.info(QStringLiteral("Retry %1 of %2 for '%3' at %4")
+                   .arg(state.retryAttempt)
+                   .arg(entry.retryCount)
+                   .arg(entry.job, state.retryAt.toString(QStringLiteral("HH:mm"))));
 }
 
 Scheduler::Result Scheduler::runCli(const ScheduleEntry &entry)
@@ -270,9 +307,9 @@ void Scheduler::writeStatus(bool force)
     for (const ScheduleEntry &entry : std::as_const(m_schedule.entries)) {
         if (!entry.enabled)
             continue;
-        const QDateTime due = nextDue(entry);
-        if (due.isValid())
-            m_status.nextRuns.append({entry.job, due});
+        const Due due = nextDue(entry);
+        if (due.at.isValid())
+            m_status.nextRuns.append({entry.job, due.at, due.attempt});
     }
     std::sort(m_status.nextRuns.begin(), m_status.nextRuns.end(),
               [](const NextRun &a, const NextRun &b) { return a.at < b.at; });
@@ -291,7 +328,7 @@ void Scheduler::sleepUntilNextCheck(const QDateTime &now)
     qint64 waitMs = 5000;
     if (!m_paused) {
         for (const ScheduleEntry &entry : std::as_const(m_schedule.entries)) {
-            const QDateTime due = entry.enabled ? nextDue(entry) : QDateTime();
+            const QDateTime due = entry.enabled ? nextDue(entry).at : QDateTime();
             if (due.isValid())
                 waitMs = std::min(waitMs, std::max<qint64>(0, now.msecsTo(due)) + 50);
         }

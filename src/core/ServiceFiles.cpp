@@ -128,7 +128,8 @@ QJsonObject JobRunState::toJson() const
     return {{"anchor", dateToString(anchor)},   {"fingerprint", fingerprint},
             {"lastStart", dateToString(lastStart)}, {"lastRun", dateToString(lastRun)},
             {"lastStatus", lastStatus},           {"lastReport", lastReport},
-            {"lastExitCode", lastExitCode}};
+            {"lastExitCode", lastExitCode}, {"retryAttempt", retryAttempt},
+            {"retryAt", dateToString(retryAt)}};
 }
 
 JobRunState JobRunState::fromJson(const QJsonObject &o)
@@ -141,6 +142,8 @@ JobRunState JobRunState::fromJson(const QJsonObject &o)
     s.lastStatus = o.value("lastStatus").toString();
     s.lastReport = o.value("lastReport").toString();
     s.lastExitCode = o.value("lastExitCode").toInt(-1);
+    s.retryAttempt = o.value("retryAttempt").toInt();
+    s.retryAt = dateFromJson(o.value("retryAt"));
     return s;
 }
 
@@ -173,7 +176,7 @@ QJsonObject ServiceStatus::toJson() const
 {
     QJsonArray next;
     for (const NextRun &run : nextRuns)
-        next.append(QJsonObject{{"job", run.job}, {"at", dateToString(run.at)}});
+        next.append(QJsonObject{{"job", run.job}, {"at", dateToString(run.at)}, {"attempt", run.attempt}});
     return {{"activity", kActivityKeys[int(activity)]},
             {"pid", pid},
             {"version", version},
@@ -203,7 +206,7 @@ ServiceStatus ServiceStatus::fromJson(const QJsonObject &o)
     s.currentSince = dateFromJson(o.value("currentSince"));
     for (const QJsonValue &v : o.value("nextRuns").toArray()) {
         const QJsonObject run = v.toObject();
-        s.nextRuns.append({run.value("job").toString(), dateFromJson(run.value("at"))});
+        s.nextRuns.append({run.value("job").toString(), dateFromJson(run.value("at")), run.value("attempt").toInt()});
     }
     s.lastError = o.value("lastError").toString();
     return s;
