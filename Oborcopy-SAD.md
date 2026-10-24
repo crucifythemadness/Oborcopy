@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Document version | 1.1 |
-| Software version | 1.0.0 |
-| Last updated | 2026-10-11 |
+| Document version | 1.3 |
+| Software version | 1.1.1 |
+| Last updated | 2026-10-24 |
 | Status | Living document – updated with every milestone |
 
 ---
@@ -517,3 +517,4 @@ The PDF is part of both deployment packages.
 | 1.0 (SW 1.0.0) | 2026-10-11 | Release 1.0.0 – verified with a full music library sync on Windows. |
 | 1.1 (SW 1.0.0) | 2026-10-11 | User Guide (Markdown + PDF) with screenshots, included in both packages. UI fixes: "&" in Advanced section titles, width of the job name dialog, "file(s)" label. |
 | 1.2 (SW 1.1.0) | 2026-10-18 | Optional retry of failed scheduled runs (count + interval); Linux fix: the CLI hung on exit when started by the service (blocking stdin read); end-to-end systemd test in Docker (`scripts/test-linux-service.ps1`). Online/offline dots for source and destination (checked in the background, Preview/Start disabled while offline). Oborcopy Scheduler service (`oborcopy-service`, 5.5): Windows service / systemd user service, Service Manager and status pill in the GUI, schedules (hourly/daily/weekly/monthly, catch-up), scheduled runs in the history. Linux folder dialog lists mounted volumes. |
+| 1.3 (SW 1.1.1) | 2026-10-24 | Source and destination show the volume name (label, plus drive letter on Windows) in the drive info line. |

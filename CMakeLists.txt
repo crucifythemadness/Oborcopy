@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(Oborcopy
-    VERSION 1.1.0
+    VERSION 1.1.1
     DESCRIPTION "GUI file synchronisation and backup tool"
     LANGUAGES CXX)
 

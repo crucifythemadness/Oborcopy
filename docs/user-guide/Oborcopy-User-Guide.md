@@ -6,7 +6,7 @@
 
 **Back up and mirror your folders – safely and step by step**
 
-Version 1.1.0 · for Windows 10/11 and Linux
+Version 1.1.1 · for Windows 10/11 and Linux
 
 </div>
 
@@ -57,7 +57,7 @@ Oborcopy does not need an installer. You unpack it and start it.
 
 ### 2.1 Windows 10 / 11
 
-1. Unpack `Oborcopy-1.1.0-win64.zip` to a folder of your choice, for example `C:\Tools\Oborcopy`.
+1. Unpack `Oborcopy-1.1.1-win64.zip` to a folder of your choice, for example `C:\Tools\Oborcopy`.
 2. Double-click **`Oborcopy.exe`**.
 3. *Optional:* right-click `Oborcopy.exe` → **Show more options → Send to → Desktop (create shortcut)**.
 
@@ -71,11 +71,11 @@ Requirements: 64-bit Linux, as new as Ubuntu 24.04 or newer (e.g. Linux Mint 22,
 
 1. Unpack the archive in a terminal:
    ```
-   tar xzf oborcopy-1.1.0-linux-x86_64.tar.gz
+   tar xzf oborcopy-1.1.1-linux-x86_64.tar.gz
    ```
 2. Start Oborcopy:
    ```
-   cd oborcopy-1.1.0-linux-x86_64
+   cd oborcopy-1.1.1-linux-x86_64
    ./oborcopy
    ```
 3. *Optional:* add Oborcopy to your application menu:
@@ -630,4 +630,4 @@ Your Windows password has changed. Click **Update password…** and enter the ne
 
 ---
 
-<p align="center"><em>Oborcopy 1.1.0 – User Guide</em></p>
+<p align="center"><em>Oborcopy 1.1.1 – User Guide</em></p>
