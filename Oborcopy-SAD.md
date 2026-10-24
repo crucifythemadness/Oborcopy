@@ -169,7 +169,7 @@ flowchart TB
 |---|---|
 | `MainWindow` | Layout (sidebar, job header, options/progress stack, action bar), menus, auto-save, run control |
 | `JobListWidget` | Sidebar job list: new, duplicate, rename, delete |
-| `PathPicker` | Folder field with browse button, drag & drop and drive info (file system, free space) |
+| `PathPicker` | Folder field with browse button, drag & drop and drive info (volume name, file system, free space) |
 | `BasicOptionsPage` | Mode cards (Update/Mirror), subfolders, retries, time tolerance, excludes, dry run |
 | `AdvancedOptionsPage` | Collapsible sections: copy behaviour, comparison, filters, metadata, retry timing, mirror safety, logging |
 | `SyncController` | Owns the worker `QThread` and the `SyncControl`; relays engine callbacks as queued signals |
@@ -370,7 +370,7 @@ Rules: the GUI never touches engine data directly – results arrive as `std::sh
 
 ## 10. User interface concept
 * **Sidebar** – job list (new / duplicate / rename / delete) and run history.
-* **Job header** – source → destination with drive info (file system, free space, "2 s timestamps" hint). Folders can be dropped onto the fields.
+* **Job header** – source → destination with drive info (volume name, file system, free space, "2 s timestamps" hint). Folders can be dropped onto the fields.
 * **Basic tab** – two large mode cards (*Update*, *Mirror* with a red "deletes" badge) and the few options most users need.
 * **Advanced tab** – collapsible sections; every option has a tooltip or explanation.
 * **Action bar** – *Preview* (F6) and *Start sync* (F5); while running *Pause/Resume* (F7) and *Cancel* (Shift+F5).

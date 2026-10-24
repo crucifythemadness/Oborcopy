@@ -35,7 +35,7 @@ VolumeInfo query(const QString &path)
         return info;
     info.valid = true;
     info.fileSystem = QString::fromUtf8(storage.fileSystemType());
-    info.displayName = storage.displayName();
+    info.label = storage.name();
     info.rootPath = storage.rootPath();
     info.bytesFree = storage.bytesAvailable();
     info.bytesTotal = storage.bytesTotal();
@@ -50,6 +50,20 @@ bool isFatLike(const QString &fileSystem)
                                     QStringLiteral("vfat"),  QStringLiteral("exfat"),
                                     QStringLiteral("msdos")};
     return fat.contains(fileSystem.toLower());
+}
+
+QString volumeName(const VolumeInfo &volume)
+{
+    QString root = QDir::toNativeSeparators(volume.rootPath);
+    if (root.size() > 1 && (root.endsWith(QLatin1Char('/')) || root.endsWith(QLatin1Char('\\'))))
+        root.chop(1);
+    if (volume.label.isEmpty())
+        return root;
+#ifdef Q_OS_WIN
+    return QStringLiteral("%1 (%2)").arg(volume.label, root);
+#else
+    return volume.label; // the mount point usually repeats the label
+#endif
 }
 
 int autoToleranceMs(const VolumeInfo &source, const VolumeInfo &destination)

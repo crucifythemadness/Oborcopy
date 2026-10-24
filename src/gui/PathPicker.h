@@ -11,7 +11,7 @@ class QTimer;
 namespace obor {
 
 // Folder input with browse button, drag & drop, an online/offline dot next to
-// the caption and a drive info line ("exFAT · 412 GB free of 1.8 TB").
+// the caption and a drive info line ("BACKUP (E:) · exFAT · 412 GB free of 1.8 TB").
 // Reachability is checked in the background (an offline network share can
 // block for many seconds) after every change and every few seconds, so
 // plugging or unplugging a drive shows up while the window is open.

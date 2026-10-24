@@ -197,8 +197,9 @@ void PathPicker::setAvailability(Availability availability, const VolumeInfo &vo
     const ThemeColors &c = Theme::colors();
     QString volumeText;
     if (volume.valid) {
-        volumeText = tr("%1 · %2 free of %3")
-                         .arg(volume.fileSystem, GuiUtil::formatBytes(volume.bytesFree),
+        volumeText = tr("%1 · %2 · %3 free of %4")
+                         .arg(FsInfo::volumeName(volume), volume.fileSystem,
+                              GuiUtil::formatBytes(volume.bytesFree),
                               GuiUtil::formatBytes(volume.bytesTotal));
         if (volume.fatLike)
             volumeText += tr(" · 2 s timestamps");
@@ -241,6 +242,7 @@ void PathPicker::setAvailability(Availability availability, const VolumeInfo &vo
     m_dot->setPixmap(IconFactory::dot(color).pixmap(kDotSize, kDotSize));
     m_dot->setToolTip(tip);
     m_info->setText(text);
+    m_info->setToolTip(volume.valid ? QDir::toNativeSeparators(volume.rootPath) : QString());
     m_info->setStyleSheet(availability == Availability::Offline
                               ? QStringLiteral("color: %1;").arg(c.danger.name())
                               : QString());

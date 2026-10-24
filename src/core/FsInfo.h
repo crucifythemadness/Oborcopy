@@ -8,8 +8,8 @@ struct VolumeInfo
 {
     bool valid = false;
     QString fileSystem;   // e.g. NTFS, exFAT, ext4
-    QString displayName;  // volume label or mount point
-    QString rootPath;
+    QString label;        // volume label, may be empty
+    QString rootPath;     // drive or mount point, e.g. "E:/" or "/media/usb"
     qint64 bytesFree = 0;
     qint64 bytesTotal = 0;
     bool fatLike = false; // 2-second timestamp resolution
@@ -20,6 +20,8 @@ namespace FsInfo {
 
 VolumeInfo query(const QString &path);
 bool isFatLike(const QString &fileSystem);
+// "BACKUP (E:)" on Windows, "BACKUP" elsewhere; the drive or mount point without a label.
+QString volumeName(const VolumeInfo &volume);
 // 2000 ms when either side is FAT/exFAT, otherwise 0 (exact comparison).
 int autoToleranceMs(const VolumeInfo &source, const VolumeInfo &destination);
 // File names compare case-insensitively on Windows and on FAT/exFAT volumes.

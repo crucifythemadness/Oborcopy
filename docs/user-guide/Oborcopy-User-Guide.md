@@ -110,7 +110,7 @@ That's it. Your settings are saved automatically – next week you only click **
 | Area | What you find there |
 |---|---|
 | **Sidebar (left)** | Your jobs. Click a job to open it. The buttons below the list create **(+)**, duplicate, rename and delete jobs. **Run history** shows earlier runs. |
-| **Job header (top)** | The job name, **Source** and **Destination**. Below each folder Oborcopy shows information about the disk, e.g. *"exFAT · 412 GB free of 1.8 TB · 2 s timestamps"*. |
+| **Job header (top)** | The job name, **Source** and **Destination**. Below each folder Oborcopy shows information about the disk – its volume name, file system and free space, e.g. *"BACKUP (E:) · exFAT · 412 GB free of 1.8 TB · 2 s timestamps"*. On Linux the volume label is shown (or the mount point if the volume has no label). |
 | **Basic tab** | The mode cards **Update** / **Mirror** and the most important options. Most users never need more. |
 | **Advanced tab** | All further options, grouped into sections ([section 8](#8-advanced-options)). |
 | **Action bar (bottom)** | **Preview** and **Start sync**. While a sync is running: **Pause/Resume** and **Cancel**. On the left a status text, e.g. *"All changes saved"*. |
