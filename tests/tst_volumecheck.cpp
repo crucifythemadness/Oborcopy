@@ -63,13 +63,6 @@ private slots:
         QCOMPARE(r.path, QString("G:/Backup"));
     }
 
-    void followsDriveRootItself()
-    {
-        const auto r = VolumeCheck::resolve("E:/", kBackup, VolumeInfo(), {volume("BACKUP", "F:/")});
-        QVERIFY(r.status == Status::Moved);
-        QCOMPARE(r.path, QString("F:/"));
-    }
-
     void followsMountPoint()
     {
         const VolumeRef ref{"BACKUP", "/media/u/BACKUP"};
@@ -79,7 +72,24 @@ private slots:
         QCOMPARE(r.path, QString("/media/u/BACKUP1/Music"));
     }
 
+    void followsMountPointItself()
+    {
+        const VolumeRef ref{"BACKUP", "/media/u/BACKUP"};
+        const auto r = VolumeCheck::resolve("/media/u/BACKUP", ref, volume("", "/"),
+                                            {volume("BACKUP", "/run/media/u/BACKUP")});
+        QVERIFY(r.status == Status::Moved);
+        QCOMPARE(r.path, QString("/run/media/u/BACKUP"));
+    }
+
 #ifdef Q_OS_WIN
+    // Drive letters only mean something on Windows (Qt treats "F:" as a plain name elsewhere).
+    void followsDriveRootItself()
+    {
+        const auto r = VolumeCheck::resolve("E:/", kBackup, VolumeInfo(), {volume("BACKUP", "F:/")});
+        QVERIFY(r.status == Status::Moved);
+        QCOMPARE(r.path, QString("F:/"));
+    }
+
     void driveLetterCaseIgnored()
     {
         const auto r = VolumeCheck::resolve("e:/Backup", kBackup, VolumeInfo(), {volume("BACKUP", "F:/")});
@@ -143,8 +153,10 @@ private slots:
         QCOMPARE(VolumeCheck::findElsewhere("H:/AIMP/FLAC", volumes, isDir, &found),
                  QString("O:/AIMP/FLAC"));
         QCOMPARE(found.label, QString("AIMPII"));
+#ifdef Q_OS_WIN
         QCOMPARE(VolumeCheck::findElsewhere("H:\\AIMP\\FLAC", volumes, isDir, nullptr),
                  QString("O:/AIMP/FLAC"));
+#endif
     }
 
     void noSuggestionWhenNotUnique()
