@@ -129,8 +129,34 @@ int CliRunner::runJob(JobOptions job, const Options &options)
     SyncEngine engine(job, *control, callbacks);
     engine.setScheduled(options.scheduled);
     const RunReport report = engine.run();
+    if (options.jobFile.isEmpty())
+        rememberVolumes(job.name, report);
     printSummary(report);
     return exitCode(report);
+}
+
+// Stores a disk followed to a new drive letter and newly seen volume labels in
+// the job, so the next run (and the GUI) starts from there.
+void CliRunner::rememberVolumes(const QString &jobName, const RunReport &report)
+{
+    const JobStore store(AppPaths::jobsDir());
+    std::optional<JobOptions> job = store.load(jobName);
+    if (!job)
+        return;
+    bool changed = false;
+    if (report.relocated) {
+        job->source = report.source;
+        job->destination = report.destination;
+        changed = true;
+    }
+    if (job->sourceVolume != report.sourceVolume || job->destinationVolume != report.destinationVolume) {
+        job->sourceVolume = report.sourceVolume;
+        job->destinationVolume = report.destinationVolume;
+        changed = true;
+    }
+    QString error;
+    if (changed && !store.save(*job, &error))
+        m_err << "Warning: could not update the job: " << error << "\n";
 }
 
 bool CliRunner::confirmPlan(const SyncPlan &plan, const Options &options)

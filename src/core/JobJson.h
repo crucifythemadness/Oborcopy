@@ -11,4 +11,8 @@ namespace obor::JobJson {
 QJsonObject toJson(const JobOptions &job);
 JobOptions fromJson(const QJsonObject &object);
 
+// {"label": "BACKUP", "root": "E:/"}; anything else (e.g. a plain string) reads as empty.
+QJsonObject toJson(const VolumeRef &ref);
+VolumeRef volumeRefFromJson(const QJsonValue &value);
+
 } // namespace obor::JobJson

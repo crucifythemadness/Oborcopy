@@ -146,6 +146,7 @@ flowchart TB
 | `AppInfo` | Name, version, build date, Qt version, compiler |
 | `JobValidator` | Pre-run checks (folders exist, destination not inside source, …) |
 | `FsInfo` | Volume info (`QStorageInfo`): file system, free space, FAT detection, auto tolerance, case sensitivity |
+| `VolumeCheck` | Recognises a job's disks by volume label (`VolumeRef` in the job): follows a disk to a new drive letter / mount point, refuses a different disk at the old place, reports a missing or ambiguous disk. Used by the engine (all runs) and the GUI |
 | `PathFilter` | Include/exclude wildcards, size/age limits, hidden/system attributes |
 | `FileScanner` | Recursive directory walk → `ScanResult` (files and folders keyed by relative path) |
 | `FileComparator` | Size + modification time with tolerance and optional DST tolerance |
@@ -169,7 +170,7 @@ flowchart TB
 |---|---|
 | `MainWindow` | Layout (sidebar, job header, options/progress stack, action bar), menus, auto-save, run control |
 | `JobListWidget` | Sidebar job list: new, duplicate, rename, delete |
-| `PathPicker` | Folder field with browse button, drag & drop and drive info (volume name, file system, free space) |
+| `PathPicker` | Folder field with browse button, drag & drop and drive info (volume name, file system, free space); follows the job's disk to a new drive letter, flags a different disk at the old letter ("Use … for this job" link), "Offline – connect BACKUP" for a disconnected disk |
 | `BasicOptionsPage` | Mode cards (Update/Mirror), subfolders, retries, time tolerance, excludes, dry run |
 | `AdvancedOptionsPage` | Collapsible sections: copy behaviour, comparison, filters, metadata, retry timing, mirror safety, logging |
 | `SyncController` | Owns the worker `QThread` and the `SyncControl`; relays engine callbacks as queued signals |
@@ -333,6 +334,8 @@ Read-only/hidden/system attributes of an existing target are cleared before repl
   "name": "Music Backup",
   "source": "D:/Music",
   "destination": "E:/Backup/Music",
+  "sourceVolume":      { "label": "DATA",   "root": "D:/" },
+  "destinationVolume": { "label": "BACKUP", "root": "E:/" },
   "mode": "mirror",
   "filter":  { "excludeDirs": ["$RECYCLE.BIN", "System Volume Information", ".Trash-*"], "excludeFiles": [], "symlinks": "skip", ... },
   "copy":    { "recursive": true, "copyEmptyDirs": true, "parallelCopies": 1, "verifyAfterCopy": false, "dryRun": false, ... },
@@ -370,7 +373,7 @@ Rules: the GUI never touches engine data directly – results arrive as `std::sh
 
 ## 10. User interface concept
 * **Sidebar** – job list (new / duplicate / rename / delete) and run history.
-* **Job header** – source → destination with drive info (volume name, file system, free space, "2 s timestamps" hint). Folders can be dropped onto the fields.
+* **Job header** – source → destination with drive info (volume name, file system, free space, "2 s timestamps" hint). Each folder's disk is remembered by label (`sourceVolume` / `destinationVolume` in the job, see `VolumeCheck`). The engine checks it before every run: a moved disk is followed (logged; the CLI writes the new path back to the job), a different or ambiguous disk stops the run. Folders can be dropped onto the fields.
 * **Basic tab** – two large mode cards (*Update*, *Mirror* with a red "deletes" badge) and the few options most users need.
 * **Advanced tab** – collapsible sections; every option has a tooltip or explanation.
 * **Action bar** – *Preview* (F6) and *Start sync* (F5); while running *Pause/Resume* (F7) and *Cancel* (Shift+F5).

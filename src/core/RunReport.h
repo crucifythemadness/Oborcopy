@@ -45,6 +45,11 @@ struct RunReport
     QString jobName;
     QString source;
     QString destination;
+    // Not serialised: the disks the folders were found on, and whether a disk
+    // was followed to a new drive letter (the caller updates the job).
+    VolumeRef sourceVolume;
+    VolumeRef destinationVolume;
+    bool relocated = false;
     SyncMode mode = SyncMode::Update;
     bool dryRun = false;
     bool scheduled = false; // started by the scheduler service, not by the user

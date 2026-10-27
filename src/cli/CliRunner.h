@@ -48,6 +48,7 @@ private:
     int listJobs();
     std::optional<JobOptions> loadJob(const Options &options);
     int runJob(JobOptions job, const Options &options);
+    void rememberVolumes(const QString &jobName, const RunReport &report);
     bool confirmPlan(const SyncPlan &plan, const Options &options);
     static void watchStdin(std::shared_ptr<SyncControl> control);
     void printProgress(const ProgressInfo &info);

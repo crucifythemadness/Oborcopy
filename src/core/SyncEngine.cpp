@@ -11,8 +11,10 @@
 #include "SyncControl.h"
 #include "SyncExecutor.h"
 #include "SyncPlanner.h"
+#include "VolumeCheck.h"
 
 #include <QDir>
+#include <QFileInfo>
 #include <QLocale>
 
 namespace obor {
@@ -22,6 +24,19 @@ namespace {
 QString cleanRoot(const QString &path)
 {
     return QDir::cleanPath(QDir::fromNativeSeparators(path.trimmed()));
+}
+
+// A missing folder whose disk is not known yet may sit under another drive letter.
+QString elsewhereHint(const QString &path, const VolumeRef &ref)
+{
+    if (!ref.isEmpty() || QFileInfo::exists(path))
+        return {};
+    VolumeInfo found;
+    const QString other = VolumeCheck::findElsewhere(path, &found);
+    if (other.isEmpty())
+        return {};
+    return QStringLiteral(" The folder exists on %1 as %2 – open the job in Oborcopy to use it.")
+        .arg(FsInfo::volumeName(found), QDir::toNativeSeparators(other));
 }
 
 } // namespace
@@ -64,6 +79,8 @@ void SyncEngine::setup()
     m_report.jobName = m_job.name;
     m_report.source = m_job.source;
     m_report.destination = m_job.destination;
+    m_report.sourceVolume = m_job.sourceVolume;
+    m_report.destinationVolume = m_job.destinationVolume;
     m_report.mode = m_job.mode;
     m_report.dryRun = m_job.copy.dryRun;
     m_report.started = QDateTime::currentDateTime();
@@ -93,13 +110,21 @@ void SyncEngine::logHeader()
 bool SyncEngine::validate()
 {
     m_tracker->setPhase(SyncPhase::Validating);
+    if (!checkVolume(m_job.source, m_job.sourceVolume, QStringLiteral("Source"))
+        || !checkVolume(m_job.destination, m_job.destinationVolume, QStringLiteral("Destination")))
+        return false;
+    m_report.source = m_job.source;
+    m_report.destination = m_job.destination;
     const QString error = JobValidator::validate(m_job);
     if (!error.isEmpty()) {
-        fail(error);
+        const QString hint = elsewhereHint(m_job.source, m_job.sourceVolume);
+        fail(hint.isEmpty() || error.endsWith(QLatin1Char('.')) ? error + hint : error + u'.' + hint);
         return false;
     }
     m_sourceVolume = FsInfo::query(m_job.source);
     m_destVolume = FsInfo::query(m_job.destination);
+    m_report.sourceVolume = VolumeCheck::learn(m_job.sourceVolume, m_sourceVolume);
+    m_report.destinationVolume = VolumeCheck::learn(m_job.destinationVolume, m_destVolume);
     m_caseInsensitive = FsInfo::caseInsensitive(m_sourceVolume, m_destVolume);
     const int tolerance = m_job.compare.toleranceMode == ToleranceMode::Auto
                               ? FsInfo::autoToleranceMs(m_sourceVolume, m_destVolume)
@@ -109,6 +134,39 @@ bool SyncEngine::validate()
                        .arg(m_sourceVolume.fileSystem, m_destVolume.fileSystem)
                        .arg(tolerance)
                        .arg(m_job.compare.dstTolerance ? QStringLiteral(" (+DST)") : QString()));
+    return true;
+}
+
+// The folder must be on the disk it was last seen on (recognised by label):
+// follows the disk to a new drive letter, refuses a different disk.
+bool SyncEngine::checkVolume(QString &path, VolumeRef &ref, const QString &side)
+{
+    const VolumeCheck::Result result = VolumeCheck::resolve(path, ref);
+    switch (result.status) {
+    case VolumeCheck::Status::NoIdentity:
+    case VolumeCheck::Status::Ok:
+        return true;
+    case VolumeCheck::Status::Moved:
+        m_logger->info(QStringLiteral("%1: disk %2 is now at %3 – using %4")
+                           .arg(side, ref.label, QDir::toNativeSeparators(result.volume.rootPath),
+                                QDir::toNativeSeparators(result.path)));
+        path = result.path;
+        m_report.relocated = true;
+        return true;
+    case VolumeCheck::Status::Ambiguous:
+        fail(QStringLiteral("%1: several connected disks are named %2. Disconnect all but one and "
+                            "try again.")
+                 .arg(side, ref.label));
+        return false;
+    case VolumeCheck::Status::WrongDisk:
+        fail(QStringLiteral("%1: %2 is a different disk, not %3. Connect %3, or choose the folder "
+                            "again in Oborcopy to use this disk.")
+                 .arg(side, FsInfo::volumeName(result.volume), ref.label));
+        return false;
+    case VolumeCheck::Status::Missing:
+        fail(QStringLiteral("%1: the disk %2 is not connected.").arg(side, ref.label));
+        return false;
+    }
     return true;
 }
 
@@ -205,7 +263,8 @@ bool SyncEngine::confirm(const SyncPlan &plan)
 void SyncEngine::execute(const SyncPlan &plan)
 {
     if (!QDir().mkpath(m_job.destination)) {
-        fail(QStringLiteral("Cannot create the destination folder %1").arg(m_job.destination));
+        fail(QStringLiteral("Cannot create the destination folder %1.%2")
+                 .arg(m_job.destination, elsewhereHint(m_job.destination, m_job.destinationVolume)));
         return;
     }
     SyncExecutor executor(m_job, *m_comparator, m_control, *m_tracker, *m_sink, m_logger.get());

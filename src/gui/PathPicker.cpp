@@ -94,8 +94,20 @@ PathPicker::PathPicker(const QString &caption, QWidget *parent)
 
     connect(browse, &QToolButton::clicked, this, &PathPicker::browse);
     connect(m_edit, &QLineEdit::textChanged, this, [this](const QString &text) {
+        // The remembered disk belongs to the previous folder; the disk of the
+        // new one is learnt as soon as it is reachable.
+        if (!m_following && !m_knownVolume.isEmpty()) {
+            m_knownVolume = VolumeRef();
+            emit knownVolumeChanged();
+        }
         m_infoTimer->start();
         emit pathChanged(text);
+    });
+    connect(m_info, &QLabel::linkActivated, this, [this](const QString &link) {
+        if (link == QLatin1String("follow"))
+            m_edit->setText(QDir::toNativeSeparators(m_suggestion)); // like choosing it by hand
+        else
+            useOtherDisk();
     });
     connect(m_infoTimer, &QTimer::timeout, this, &PathPicker::startCheck);
     connect(m_recheckTimer, &QTimer::timeout, this, [this]() {
@@ -134,6 +146,19 @@ bool PathPicker::isUsable() const
     return m_availability == Availability::Online || m_availability == Availability::WillBeCreated;
 }
 
+void PathPicker::setKnownVolume(const VolumeRef &ref)
+{
+    m_knownVolume = ref;
+}
+
+// "Use OTHER for this job": the disk found at the old place becomes the job's disk.
+void PathPicker::useOtherDisk()
+{
+    m_knownVolume = VolumeCheck::learn(VolumeRef(), m_otherDisk);
+    emit knownVolumeChanged();
+    startCheck();
+}
+
 void PathPicker::browse()
 {
     const QString start = path().isEmpty() ? QDir::homePath() : path();
@@ -142,11 +167,22 @@ void PathPicker::browse()
         m_edit->setText(QDir::toNativeSeparators(dir));
 }
 
-PathPicker::CheckResult PathPicker::check(const QString &path, bool creatable)
+PathPicker::CheckResult PathPicker::check(const QString &path, bool creatable, const VolumeRef &ref)
 {
     CheckResult result;
-    result.volume = FsInfo::query(path);
-    const QFileInfo info(path);
+    result.disk = VolumeCheck::resolve(path, ref);
+    using Status = VolumeCheck::Status;
+    if (result.disk.status == Status::WrongDisk) {
+        result.availability = Availability::WrongDisk;
+        result.volume = result.disk.volume;
+        return result;
+    }
+    if (result.disk.status == Status::Ambiguous || result.disk.status == Status::Missing)
+        return result; // Offline, whatever happens to be at the old place
+    // For a moved disk, check the folder at its new place.
+    const QString effective = result.disk.path;
+    result.volume = FsInfo::query(effective);
+    const QFileInfo info(effective);
     if (info.isDir()) {
         result.availability = Availability::Online;
     } else if (creatable && !info.exists() && QFileInfo(info.absolutePath()).isDir()) {
@@ -154,6 +190,10 @@ PathPicker::CheckResult PathPicker::check(const QString &path, bool creatable)
     } else {
         result.availability = Availability::Offline;
         result.notAFolder = info.exists();
+        // The disk is not known yet (e.g. a job from an older version): look
+        // for the folder under another drive letter to offer it.
+        if (!result.notAFolder && result.disk.status == Status::NoIdentity)
+            result.suggestion = VolumeCheck::findElsewhere(path, &result.suggestionVolume);
     }
     return result;
 }
@@ -173,8 +213,9 @@ void PathPicker::startCheck()
     m_checking = true;
     QPointer<PathPicker> guard(this);
     const bool creatable = m_creatable;
-    std::thread([guard, generation, p, creatable]() {
-        const CheckResult result = check(p, creatable);
+    const VolumeRef ref = m_knownVolume;
+    std::thread([guard, generation, p, creatable, ref]() {
+        const CheckResult result = check(p, creatable, ref);
         postToGui([guard, generation, p, result]() {
             if (guard)
                 guard->applyResult(generation, p, result);
@@ -187,9 +228,33 @@ void PathPicker::applyResult(quint64 generation, const QString &path, const Chec
     if (generation != m_generation)
         return; // the path changed meanwhile; a newer check is on its way
     m_checking = false;
-    m_checkedPath = path;
+    const bool moved = result.disk.status == VolumeCheck::Status::Moved;
+    if (moved && !isEnabled())
+        return; // a sync is running; follow the disk after it
+    m_checkedPath = moved ? result.disk.path : path;
     m_notAFolder = result.notAFolder;
+    m_diskStatus = result.disk.status;
+    m_otherDisk = result.availability == Availability::WrongDisk ? result.volume : VolumeInfo();
+    m_suggestion = result.suggestion;
+    m_suggestionVolume = result.suggestionVolume;
+    if (moved) {
+        m_following = true;
+        m_edit->setText(QDir::toNativeSeparators(result.disk.path)); // saves the job
+        m_following = false;
+    }
+    // Only a folder that is (or will be) there identifies its disk.
+    if (result.availability == Availability::Online || result.availability == Availability::WillBeCreated) {
+        const VolumeRef base = result.disk.status == VolumeCheck::Status::NoIdentity ? VolumeRef()
+                                                                                    : m_knownVolume;
+        const VolumeRef learnt = VolumeCheck::learn(base, result.volume);
+        if (learnt != m_knownVolume) {
+            m_knownVolume = learnt;
+            emit knownVolumeChanged();
+        }
+    }
     setAvailability(result.availability, result.volume);
+    if (moved)
+        emit volumeMoved(m_knownVolume.label, result.disk.volume.rootPath);
 }
 
 void PathPicker::setAvailability(Availability availability, const VolumeInfo &volume)
@@ -207,6 +272,7 @@ void PathPicker::setAvailability(Availability availability, const VolumeInfo &vo
 
     QColor color = c.muted;
     QString text;
+    QString rich; // the text with a link, if any
     QString tip;
     switch (availability) {
     case Availability::Empty:
@@ -230,22 +296,52 @@ void PathPicker::setAvailability(Availability availability, const VolumeInfo &vo
         break;
     case Availability::Offline:
         color = c.danger;
-        if (m_notAFolder)
+        if (m_notAFolder) {
             text = tr("Not a folder");
-        else if (volume.valid)
-            text = m_creatable ? tr("Offline – the parent folder was not found") : tr("Offline – folder not found");
-        else
+        } else if (volume.valid) {
+            // A drive is mounted but the folder is missing – possibly the wrong disk.
+            text = FsInfo::volumeName(volume) + QStringLiteral(" · ")
+                   + (m_creatable ? tr("Offline – the parent folder was not found")
+                                  : tr("Offline – folder not found"));
+        } else if (m_diskStatus == VolumeCheck::Status::Ambiguous) {
+            text = tr("Several connected disks are named %1 – disconnect all but one").arg(m_knownVolume.label);
+        } else if (!m_knownVolume.isEmpty()) {
+            text = tr("Offline – connect %1").arg(m_knownVolume.label);
+            tip = tr("The disk %1 is not connected or not reachable").arg(m_knownVolume.label);
+        } else if (!m_suggestion.isEmpty()) {
+            const QString found = QDir::toNativeSeparators(m_suggestion);
+            text = tr("Offline – found on %1").arg(FsInfo::volumeName(m_suggestionVolume));
+            tip = tr("The folder was not found, but %1 exists. Check that it is the right folder "
+                     "before you use it.")
+                      .arg(found);
+            rich = text.toHtmlEscaped() + QStringLiteral(" · <a href=\"follow\">%1</a>")
+                                              .arg(tr("Use %1").arg(found).toHtmlEscaped());
+        } else {
             text = tr("Offline – the drive or network share is not reachable");
-        tip = text;
+        }
+        if (tip.isEmpty())
+            tip = text;
+        break;
+    case Availability::WrongDisk: {
+        color = c.danger;
+        const QString other = volume.label.isEmpty() ? tr("this disk") : volume.label;
+        text = tr("%1 is connected, not %2").arg(FsInfo::volumeName(volume), m_knownVolume.label);
+        tip = tr("Another disk is connected where %1 was. Oborcopy does not sync to it unless you "
+                 "choose it for this job.")
+                  .arg(m_knownVolume.label);
+        rich = text.toHtmlEscaped() + QStringLiteral(" · <a href=\"use\">%1</a>")
+                                          .arg(tr("Use %1 for this job").arg(other).toHtmlEscaped());
         break;
     }
+    }
+    const bool problem = availability == Availability::Offline || availability == Availability::WrongDisk;
     m_dot->setPixmap(IconFactory::dot(color).pixmap(kDotSize, kDotSize));
     m_dot->setToolTip(tip);
-    m_info->setText(text);
+    // Rich text only for a line with a link; folder names stay plain otherwise.
+    m_info->setTextFormat(rich.isEmpty() ? Qt::PlainText : Qt::RichText);
+    m_info->setText(rich.isEmpty() ? text : rich);
     m_info->setToolTip(volume.valid ? QDir::toNativeSeparators(volume.rootPath) : QString());
-    m_info->setStyleSheet(availability == Availability::Offline
-                              ? QStringLiteral("color: %1;").arg(c.danger.name())
-                              : QString());
+    m_info->setStyleSheet(problem ? QStringLiteral("color: %1;").arg(c.danger.name()) : QString());
     if (availability != m_availability) {
         m_availability = availability;
         emit availabilityChanged(availability);

@@ -211,6 +211,8 @@ QJsonObject toJson(const JobOptions &job)
             {"name", job.name},
             {"source", job.source},
             {"destination", job.destination},
+            {"sourceVolume", toJson(job.sourceVolume)},
+            {"destinationVolume", toJson(job.destinationVolume)},
             {"mode", enumToString(job.mode, kModes)},
             {"filter", filterToJson(job.filter)},
             {"copy", copyToJson(job.copy)},
@@ -226,6 +228,8 @@ JobOptions fromJson(const QJsonObject &o)
     JobOptions job = JobOptions::defaults(o.value("name").toString());
     job.source = o.value("source").toString();
     job.destination = o.value("destination").toString();
+    job.sourceVolume = volumeRefFromJson(o.value("sourceVolume"));
+    job.destinationVolume = volumeRefFromJson(o.value("destinationVolume"));
     job.mode = enumFromString(o.value("mode"), job.mode, kModes);
     job.filter = filterFromJson(o.value("filter").toObject(), job.filter);
     job.copy = copyFromJson(o.value("copy").toObject(), job.copy);
@@ -235,6 +239,17 @@ JobOptions fromJson(const QJsonObject &o)
     job.safety = safetyFromJson(o.value("safety").toObject(), job.safety);
     job.log = logFromJson(o.value("log").toObject(), job.log);
     return job;
+}
+
+QJsonObject toJson(const VolumeRef &ref)
+{
+    return {{"label", ref.label}, {"root", ref.root}};
+}
+
+VolumeRef volumeRefFromJson(const QJsonValue &value)
+{
+    const QJsonObject o = value.toObject();
+    return {o.value("label").toString(), o.value("root").toString()};
 }
 
 } // namespace obor::JobJson

@@ -1,8 +1,21 @@
 #pragma once
 
+#include <QList>
 #include <QString>
 
 namespace obor {
+
+// The disk a job folder lives on, remembered when it was last reachable. Disks
+// are recognised by their label, so a backup disk is still found after it got
+// another drive letter or mount point.
+struct VolumeRef
+{
+    QString label; // e.g. "BACKUP"
+    QString root;  // drive or mount point when last seen, e.g. "E:/" or "/media/u/BACKUP"
+
+    bool isEmpty() const { return label.isEmpty(); }
+    bool operator==(const VolumeRef &other) const = default;
+};
 
 struct VolumeInfo
 {
@@ -19,6 +32,10 @@ struct VolumeInfo
 namespace FsInfo {
 
 VolumeInfo query(const QString &path);
+// All mounted, ready volumes.
+QList<VolumeInfo> mountedVolumes();
+// All mounted, ready volumes with this label.
+QList<VolumeInfo> volumesNamed(const QString &label);
 bool isFatLike(const QString &fileSystem);
 // "BACKUP (E:)" on Windows, "BACKUP" elsewhere; the drive or mount point without a label.
 QString volumeName(const VolumeInfo &volume);

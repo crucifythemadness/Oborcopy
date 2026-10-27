@@ -164,6 +164,19 @@ private slots:
         QVERIFY(!r.fatalError.isEmpty());
     }
 
+    // The destination's drive now holds another disk than the remembered one.
+    void differentDiskIsRefused()
+    {
+        createSampleSource();
+        QVERIFY(writeFile(m_dst + "/precious.mp3", "keep me"));
+        JobOptions j = job(SyncMode::Mirror);
+        j.destinationVolume = {"NO-SUCH-DISK-7Q", FsInfo::query(m_dst).rootPath};
+        const RunReport r = run(j);
+        QVERIFY(r.status == RunStatus::Failed);
+        QVERIFY(r.fatalError.contains("NO-SUCH-DISK-7Q"));
+        QVERIFY(QFile::exists(m_dst + "/precious.mp3"));
+    }
+
     void archiveModeKeepsDeletedFiles()
     {
         QVERIFY(writeFile(m_src + "/keep.mp3", "k"));

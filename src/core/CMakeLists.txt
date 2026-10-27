@@ -8,6 +8,7 @@ qt_add_library(oborcopy_core STATIC
     JobValidator.h JobValidator.cpp
     Platform.h Platform.cpp
     FsInfo.h FsInfo.cpp
+    VolumeCheck.h VolumeCheck.cpp
     FileEntry.h
     PathFilter.h PathFilter.cpp
     FileScanner.h FileScanner.cpp

@@ -24,6 +24,7 @@
 #include <QActionGroup>
 #include <QApplication>
 #include <QCloseEvent>
+#include <QDir>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMenuBar>
@@ -233,6 +234,13 @@ void MainWindow::connectSignals()
     connect(m_source, &PathPicker::pathChanged, this, &MainWindow::scheduleSave);
     connect(m_dest, &PathPicker::pathChanged, this, &MainWindow::scheduleSave);
     for (PathPicker *picker : {m_source, m_dest}) {
+        connect(picker, &PathPicker::knownVolumeChanged, this, &MainWindow::scheduleSave);
+        connect(picker, &PathPicker::volumeMoved, this, [this](const QString &label, const QString &newRoot) {
+            saveNow(); // now, so "All changes saved" does not replace the message
+            m_status->setText(tr("Disk %1 is now at %2 – the folder was updated.")
+                                  .arg(label, QDir::toNativeSeparators(newRoot)));
+            m_blockerShown = false;
+        });
         connect(picker, &PathPicker::availabilityChanged, this, [this]() {
             updateRunButtons();
             if (m_sync->isRunning())
@@ -290,6 +298,8 @@ void MainWindow::loadJob(const QString &name)
     m_loading = true;
     m_job = *job;
     m_jobTitle->setText(m_job.name);
+    m_source->setKnownVolume(m_job.sourceVolume);
+    m_dest->setKnownVolume(m_job.destinationVolume);
     m_source->setPath(m_job.source);
     m_dest->setPath(m_job.destination);
     m_basic->load(m_job);
@@ -305,6 +315,8 @@ void MainWindow::collectJob()
 {
     m_job.source = m_source->path();
     m_job.destination = m_dest->path();
+    m_job.sourceVolume = m_source->knownVolume();
+    m_job.destinationVolume = m_dest->knownVolume();
     m_basic->store(m_job);
     m_advanced->store(m_job);
 }
@@ -395,6 +407,16 @@ void MainWindow::onFinished(const ReportPtr &report)
 {
     m_lastReport = report;
     setRunning(false);
+    // The run may have followed a disk to a new drive letter or learnt a label.
+    if (m_hasJob && report->jobName == m_job.name) {
+        m_source->setKnownVolume(report->sourceVolume);
+        m_dest->setKnownVolume(report->destinationVolume);
+        if (report->relocated) {
+            m_source->setPath(report->source);
+            m_dest->setPath(report->destination);
+        }
+        saveNow();
+    }
     // A preview that was closed without starting changed nothing: go straight back.
     if (m_previewRun && report->status == RunStatus::Cancelled) {
         showOptions();
@@ -460,6 +482,10 @@ QString MainWindow::runBlocker() const
         case PathPicker::Availability::Checking: return tr("Checking the %1 folder…").arg(name);
         case PathPicker::Availability::Offline:
             return tr("The %1 folder is offline – connect the drive or check the network.").arg(name);
+        case PathPicker::Availability::WrongDisk:
+            return tr("The %1 folder is on a different disk than before – connect the right disk "
+                      "or choose this one for the job.")
+                .arg(name);
         default: return QString();
         }
     };

@@ -20,17 +20,9 @@ QString nearestExistingDir(const QString &path)
     return info.absoluteFilePath();
 }
 
-} // namespace
-
-VolumeInfo query(const QString &path)
+VolumeInfo fromStorage(const QStorageInfo &storage)
 {
     VolumeInfo info;
-    if (path.trimmed().isEmpty())
-        return info;
-    const QString existing = nearestExistingDir(path);
-    if (existing.isEmpty())
-        return info;
-    const QStorageInfo storage(existing);
     if (!storage.isValid())
         return info;
     info.valid = true;
@@ -41,6 +33,40 @@ VolumeInfo query(const QString &path)
     info.bytesTotal = storage.bytesTotal();
     info.fatLike = isFatLike(info.fileSystem);
     return info;
+}
+
+} // namespace
+
+VolumeInfo query(const QString &path)
+{
+    if (path.trimmed().isEmpty())
+        return {};
+    const QString existing = nearestExistingDir(path);
+    if (existing.isEmpty())
+        return {};
+    return fromStorage(QStorageInfo(existing));
+}
+
+QList<VolumeInfo> mountedVolumes()
+{
+    QList<VolumeInfo> result;
+    for (const QStorageInfo &storage : QStorageInfo::mountedVolumes()) {
+        if (storage.isReady())
+            result.append(fromStorage(storage));
+    }
+    return result;
+}
+
+QList<VolumeInfo> volumesNamed(const QString &label)
+{
+    QList<VolumeInfo> result;
+    if (label.isEmpty())
+        return result;
+    for (const VolumeInfo &volume : mountedVolumes()) {
+        if (volume.valid && volume.label == label)
+            result.append(volume);
+    }
+    return result;
 }
 
 bool isFatLike(const QString &fileSystem)

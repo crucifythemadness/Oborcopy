@@ -18,6 +18,8 @@ private slots:
         JobOptions job = JobOptions::defaults("Music Backup");
         job.source = "D:/Music";
         job.destination = "E:/Backup/Music";
+        job.sourceVolume = {"DATA", "D:/"};
+        job.destinationVolume = {"BACKUP", "E:/"};
         job.mode = SyncMode::Mirror;
         job.filter.excludeFiles = {"*.tmp"};
         job.filter.maxSize = 123456789012LL;
@@ -34,6 +36,8 @@ private slots:
         QCOMPARE(back.name, job.name);
         QCOMPARE(back.source, job.source);
         QCOMPARE(back.destination, job.destination);
+        QVERIFY(back.sourceVolume == job.sourceVolume);
+        QVERIFY(back.destinationVolume == job.destinationVolume);
         QVERIFY(back.mode == SyncMode::Mirror);
         QCOMPARE(back.filter.excludeFiles, job.filter.excludeFiles);
         QCOMPARE(back.filter.excludeDirs, job.filter.excludeDirs);
@@ -52,9 +56,19 @@ private slots:
     {
         const JobOptions job = JobJson::fromJson(QJsonObject{{"name", "x"}});
         QVERIFY(job.mode == SyncMode::Update);
+        QVERIFY(job.sourceVolume.isEmpty());
+        QVERIFY(job.destinationVolume.isEmpty());
         QCOMPARE(job.retry.retries, 3);
         QVERIFY(job.metadata.fileTimes);
         QVERIFY(job.filter.excludeDirs.contains("System Volume Information"));
+    }
+
+    // The display string written by an unreleased build is learnt again instead.
+    void legacyVolumeStringIsIgnored()
+    {
+        const JobOptions job =
+            JobJson::fromJson(QJsonObject{{"name", "x"}, {"destinationVolume", "BACKUP (E:)"}});
+        QVERIFY(job.destinationVolume.isEmpty());
     }
 
     void storeSaveLoadRenameRemove()

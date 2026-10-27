@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FsInfo.h"
+
 #include <QString>
 #include <QStringList>
 
@@ -87,6 +89,8 @@ struct JobOptions
     QString name;
     QString source;
     QString destination;
+    VolumeRef sourceVolume;      // disk the folder was last seen on (VolumeCheck)
+    VolumeRef destinationVolume;
     SyncMode mode = SyncMode::Update;
     FilterOptions filter;
     CopyOptions copy;

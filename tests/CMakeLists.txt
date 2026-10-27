@@ -15,6 +15,7 @@ oborcopy_add_test(tst_jobstore)
 oborcopy_add_test(tst_planner)
 oborcopy_add_test(tst_syncengine)
 oborcopy_add_test(tst_schedule)
+oborcopy_add_test(tst_volumecheck)
 
 # End-to-end test of the Linux scheduler service against a real systemd user
 # session (scripts/test-linux-service.ps1). Not registered with ctest.

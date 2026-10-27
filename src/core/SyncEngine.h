@@ -42,6 +42,7 @@ private:
     void setup();
     void logHeader();
     bool validate();
+    bool checkVolume(QString &path, VolumeRef &ref, const QString &side);
     bool scan(ScanResult &source, ScanResult &dest);
     bool checkEmptySource(const ScanResult &source, const ScanResult &dest);
     SyncPlan buildPlan(const ScanResult &source, const ScanResult &dest);

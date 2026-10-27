@@ -110,7 +110,7 @@ That's it. Your settings are saved automatically – next week you only click **
 | Area | What you find there |
 |---|---|
 | **Sidebar (left)** | Your jobs. Click a job to open it. The buttons below the list create **(+)**, duplicate, rename and delete jobs. **Run history** shows earlier runs. |
-| **Job header (top)** | The job name, **Source** and **Destination**. Below each folder Oborcopy shows information about the disk – its volume name, file system and free space, e.g. *"BACKUP (E:) · exFAT · 412 GB free of 1.8 TB · 2 s timestamps"*. On Linux the volume label is shown (or the mount point if the volume has no label). |
+| **Job header (top)** | The job name, **Source** and **Destination**. Below each folder Oborcopy shows information about the disk – its volume name, file system and free space, e.g. *"BACKUP (E:) · exFAT · 412 GB free of 1.8 TB · 2 s timestamps"*. On Linux the volume label is shown (or the mount point if the volume has no label). If the disk is disconnected, Oborcopy shows the name it last saw, e.g. *"Offline – connect BACKUP"*, so you know which disk to plug in ([section 4.2](#42-disks-and-drive-letters)). |
 | **Basic tab** | The mode cards **Update** / **Mirror** and the most important options. Most users never need more. |
 | **Advanced tab** | All further options, grouped into sections ([section 8](#8-advanced-options)). |
 | **Action bar (bottom)** | **Preview** and **Start sync**. While a sync is running: **Pause/Resume** and **Cancel**. On the left a status text, e.g. *"All changes saved"*. |
@@ -129,14 +129,32 @@ A **dot** in front of *Source* and *Destination* shows whether the folder can be
 | Dot | Meaning |
 |---|---|
 | 🟢 green | **Online** – the folder is reachable. For the destination also: *folder does not exist yet – it will be created* (its parent folder exists). |
-| 🔴 red | **Offline** – the disk is not connected, the network share is not reachable or the folder was not found. |
+| 🔴 red | **Offline** – the disk is not connected, the network share is not reachable or the folder was not found. Also red: **a different disk** is connected where the job's disk used to be ([section 4.2](#42-disks-and-drive-letters)). |
 | ⚪ grey | No folder chosen yet, or the check is still running. |
 
 **Preview** and **Start sync** (and `F5`/`F6`) are only available while both dots are green. The line at the bottom of the window tells you which folder is missing.
 
 ![Destination offline – Preview and Start sync are disabled](images/17-offline.png)
 
-### 4.2 The Basic options
+### 4.2 Disks and drive letters
+
+Windows does not always give a USB disk the same drive letter – plug in a second stick first, and your backup disk may show up as **F:** instead of **E:**. Oborcopy therefore recognises a disk by its **volume label** (the name shown in Explorer, e.g. *BACKUP*), not only by its letter. It remembers the label the first time the folder is reachable.
+
+| What happens | What Oborcopy does |
+|---|---|
+| The disk comes back under **another letter** | The folder follows the disk automatically, e.g. `E:\Backup\Music` becomes `F:\Backup\Music`. The status line says *"Disk BACKUP is now at F:\ – the folder was updated."* Scheduled runs do the same and note it in the log. |
+| **A different disk** has the old letter | Red dot and *"OTHER (E:) is connected, not BACKUP"*. Preview and Start sync stay disabled, and scheduled runs stop with an error – so a Mirror sync can never clean up the wrong disk. If you really want to use this disk from now on, click **Use OTHER for this job**. |
+| The disk is **not connected** | *"Offline – connect BACKUP"*. |
+| **Two connected disks** have the same label | *"Several connected disks are named BACKUP – disconnect all but one"*. |
+| Oborcopy **does not know the disk yet** (e.g. a job from an older version) and the folder is missing | If the same folder exists under exactly one other drive letter, Oborcopy offers it: *"Offline – found on BACKUP (F:) · Use F:\Backup\Music"*. Check that it is the right folder, then click the link – from then on the disk is known and followed automatically. Scheduled runs only mention the folder in their error message; they never switch on their own. |
+
+Tips:
+
+* Give each backup disk a **clear, unique label** (in Explorer: right-click the drive → *Rename*). If you rotate two backup disks for the same job, give them the **same** label – Oborcopy then accepts either.
+* Choosing a new folder (folder icon, typing, drag & drop) makes Oborcopy learn the disk of the new folder.
+* Disks without a label are recognised by their letter only, as before.
+
+### 4.3 The Basic options
 
 | Option | Meaning | Recommendation |
 |---|---|---|
@@ -539,10 +557,11 @@ Oborcopy is designed so that a mistake does not destroy your backup:
 3. **Too-many-deletions warning** – a red warning when an unusually large part of the backup would be deleted.
 4. **Empty source protection** – if the source folder is empty (e.g. disk not connected), the sync is stopped.
 5. **Folder check** – the destination may not be the same as the source or lie inside it.
-6. **No half-copied files** – each file is first written under a temporary name and only renamed when it is complete. Even a power failure leaves no broken files behind.
-7. **Archive instead of delete** – optionally, deleted files are kept in `.oborcopy-archive`.
-8. **Retries** – files that are briefly in use are tried again automatically.
-9. **Logs** – every run is documented.
+6. **Right disk check** – a different disk that got the old drive letter is never synced to; the job's disk is followed to its new letter instead.
+7. **No half-copied files** – each file is first written under a temporary name and only renamed when it is complete. Even a power failure leaves no broken files behind.
+8. **Archive instead of delete** – optionally, deleted files are kept in `.oborcopy-archive`.
+9. **Retries** – files that are briefly in use are tried again automatically.
+10. **Logs** – every run is documented.
 
 ---
 
