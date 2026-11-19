@@ -636,22 +636,22 @@ void ServiceController::stop()
                 tr("Stopping…"), QString());
 }
 
-void ServiceController::signalService(int signal, const QString &text)
+void ServiceController::signalService(int signal, const QString &failure)
 {
     if (isBusy())
         return;
     const bool ok = m_os.pid > 0 && ::kill(pid_t(m_os.pid), signal) == 0;
-    endAction(ok, ok ? QString() : tr("Could not %1 the service (no running process).").arg(text));
+    endAction(ok, ok ? QString() : failure);
 }
 
 void ServiceController::pause()
 {
-    signalService(SIGUSR1, tr("pause"));
+    signalService(SIGUSR1, tr("Could not pause the service (no running process)."));
 }
 
 void ServiceController::resume()
 {
-    signalService(SIGUSR2, tr("resume"));
+    signalService(SIGUSR2, tr("Could not resume the service (no running process)."));
 }
 
 void ServiceController::install()

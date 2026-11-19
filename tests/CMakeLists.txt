@@ -17,6 +17,20 @@ oborcopy_add_test(tst_syncengine)
 oborcopy_add_test(tst_schedule)
 oborcopy_add_test(tst_volumecheck)
 
+# German GUI texts for core messages (src/gui/GuiText), with the real translations.
+oborcopy_add_test(tst_guitext)
+target_sources(tst_guitext PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/gui/GuiText.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/Language.cpp)
+target_include_directories(tst_guitext PRIVATE ${CMAKE_SOURCE_DIR}/src/gui)
+qt_add_lrelease(tst_guitext
+    TS_FILES ${CMAKE_SOURCE_DIR}/translations/oborcopy_de.ts
+    QM_FILES_OUTPUT_VARIABLE tst_guitext_qm)
+qt_add_resources(tst_guitext "tst_guitext_i18n"
+    PREFIX "/i18n"
+    BASE ${CMAKE_CURRENT_BINARY_DIR}
+    FILES ${tst_guitext_qm})
+
 # End-to-end test of the Linux scheduler service against a real systemd user
 # session (scripts/test-linux-service.ps1). Not registered with ctest.
 if(UNIX AND NOT APPLE)

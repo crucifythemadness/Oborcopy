@@ -6,6 +6,10 @@ with a preview before anything is deleted.
 
 USER GUIDE
   Oborcopy-User-Guide.pdf in this folder explains everything step by step.
+  German: Benutzerhandbuch.pdf.
+
+LANGUAGE
+  Oborcopy speaks English and German: View > Language (restarts Oborcopy).
 
 START
   Double-click Oborcopy.exe. No installation is needed; keep all files of

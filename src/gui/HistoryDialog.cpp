@@ -1,6 +1,7 @@
 #include "HistoryDialog.h"
 
 #include "AppPaths.h"
+#include "GuiText.h"
 #include "GuiUtil.h"
 #include "IconFactory.h"
 #include "JobStore.h"
@@ -157,13 +158,13 @@ void HistoryDialog::addRow(const QString &path)
         return;
     const int row = m_table->rowCount();
     m_table->insertRow(row);
-    const QString mode = toString(report->mode) + (report->dryRun ? tr(" (preview)") : QString());
+    const QString mode = GuiText::mode(report->mode) + (report->dryRun ? tr(" (preview)") : QString());
     const QStringList cells = {QLocale().toString(report->started, QLocale::ShortFormat),
                                report->jobName,
                                report->scheduled ? tr("Scheduler") : tr("You"),
                                mode,
-                               toString(report->status),
-                               report->summaryLine()};
+                               GuiText::status(report->status),
+                               GuiText::summaryLine(*report)};
     for (int c = 0; c < cells.size(); ++c) {
         auto *item = new QTableWidgetItem(cells.at(c));
         item->setData(PathRole, path);

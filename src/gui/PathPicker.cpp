@@ -324,13 +324,14 @@ void PathPicker::setAvailability(Availability availability, const VolumeInfo &vo
         break;
     case Availability::WrongDisk: {
         color = c.danger;
-        const QString other = volume.label.isEmpty() ? tr("this disk") : volume.label;
+        const QString use = volume.label.isEmpty() ? tr("Use this disk for this job")
+                                                   : tr("Use %1 for this job").arg(volume.label);
         text = tr("%1 is connected, not %2").arg(FsInfo::volumeName(volume), m_knownVolume.label);
         tip = tr("Another disk is connected where %1 was. Oborcopy does not sync to it unless you "
                  "choose it for this job.")
                   .arg(m_knownVolume.label);
         rich = text.toHtmlEscaped() + QStringLiteral(" · <a href=\"use\">%1</a>")
-                                          .arg(tr("Use %1 for this job").arg(other).toHtmlEscaped());
+                                          .arg(use.toHtmlEscaped());
         break;
     }
     }

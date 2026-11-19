@@ -1,6 +1,7 @@
 #include "ServiceDialog.h"
 
 #include "AppInfo.h"
+#include "GuiText.h"
 #include "GuiUtil.h"
 #include "HistoryDialog.h"
 #include "IconFactory.h"
@@ -398,10 +399,11 @@ void ServiceDialog::refreshTable()
 
         const QStringList cells = {QString(),
                                    entry.job,
-                                   entry.describe(),
+                                   GuiText::describe(entry),
                                    nextText,
                                    run.lastRun.isValid() ? GuiUtil::formatWhen(run.lastRun) : tr("never"),
-                                   retrying ? tr("%1 – retrying").arg(run.lastStatus) : run.lastStatus};
+                                   retrying ? tr("%1 – retrying").arg(GuiText::message(run.lastStatus))
+                                            : GuiText::message(run.lastStatus)};
         for (int col = 0; col < ColumnCount; ++col) {
             QTableWidgetItem *item = m_table->item(row, col);
             if (!item) {

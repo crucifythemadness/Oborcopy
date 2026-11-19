@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(Oborcopy
-    VERSION 1.1.1
+    VERSION 1.1.2
     DESCRIPTION "GUI file synchronisation and backup tool"
     LANGUAGES CXX)
 
@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Qt 6.4 is the minimum because Ubuntu 24.04 (Linux build container) ships it.
-find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Widgets LinguistTools)
 qt_standard_project_setup()
 
 option(OBORCOPY_BUILD_TESTS "Build the unit and integration tests" ON)

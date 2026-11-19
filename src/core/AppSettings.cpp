@@ -18,6 +18,7 @@ AppSettings AppSettings::load(const QString &path)
         return settings;
     const QJsonObject o = QJsonDocument::fromJson(file.readAll()).object();
     settings.theme = o.value("theme").toString(settings.theme);
+    settings.language = o.value("language").toString(settings.language);
     settings.lastJob = o.value("lastJob").toString();
     settings.windowGeometry = QByteArray::fromBase64(o.value("windowGeometry").toString().toLatin1());
     settings.splitterState = QByteArray::fromBase64(o.value("splitterState").toString().toLatin1());
@@ -28,6 +29,7 @@ bool AppSettings::save(const QString &path) const
 {
     AppPaths::ensureDir(QFileInfo(path).absolutePath());
     const QJsonObject o{{"theme", theme},
+                        {"language", language},
                         {"lastJob", lastJob},
                         {"windowGeometry", QString::fromLatin1(windowGeometry.toBase64())},
                         {"splitterState", QString::fromLatin1(splitterState.toBase64())}};

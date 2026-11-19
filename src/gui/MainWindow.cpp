@@ -6,11 +6,13 @@
 #include "AppPaths.h"
 #include "BasicOptionsPage.h"
 #include "DevelopersDialog.h"
+#include "GuiText.h"
 #include "GuiUtil.h"
 #include "HistoryDialog.h"
 #include "IconFactory.h"
 #include "JobListWidget.h"
 #include "JobValidator.h"
+#include "Language.h"
 #include "PathPicker.h"
 #include "PreviewDialog.h"
 #include "ProgressPanel.h"
@@ -206,6 +208,20 @@ void MainWindow::buildMenus()
         group->addAction(action);
     }
 
+    // Each language is named in its own language, so it can be found whatever the UI shows.
+    QMenu *language = view->addMenu(tr("&Language"));
+    auto *languageGroup = new QActionGroup(this);
+    const std::pair<LanguageMode, QString> languages[] = {
+        {LanguageMode::System, tr("&System")},
+        {LanguageMode::English, QStringLiteral("&English")},
+        {LanguageMode::German, QStringLiteral("&Deutsch")}};
+    for (const auto &[mode, label] : languages) {
+        QAction *action = language->addAction(label, this, [this, mode = mode]() { setLanguage(mode); });
+        action->setCheckable(true);
+        action->setChecked(Language::mode() == mode);
+        languageGroup->addAction(action);
+    }
+
     QMenu *help = bar->addMenu(tr("&Help"));
     help->addAction(tr("&About Oborcopy"), this, [this]() { AboutDialog(this).exec(); });
     help->addAction(tr("About &Developers"), this, [this]() { DevelopersDialog(this).exec(); });
@@ -337,7 +353,7 @@ void MainWindow::saveNow()
     if (m_store.save(m_job, &error))
         m_status->setText(tr("All changes saved"));
     else
-        m_status->setText(tr("Could not save: %1").arg(error));
+        m_status->setText(tr("Could not save: %1").arg(GuiText::message(error)));
 }
 
 void MainWindow::onJobRenamed(const QString &oldName, const QString &newName)
@@ -373,7 +389,7 @@ void MainWindow::startSync(SyncController::StartMode mode)
     saveNow();
     const QString problem = JobValidator::validate(m_job);
     if (!problem.isEmpty()) {
-        QMessageBox::warning(this, tr("Cannot start"), problem);
+        QMessageBox::warning(this, tr("Cannot start"), GuiText::message(problem));
         return;
     }
     const ServiceState &service = m_service->state();
@@ -424,7 +440,7 @@ void MainWindow::onFinished(const ReportPtr &report)
         return;
     }
     m_progress->showResult(*report);
-    m_status->setText(report->summaryLine());
+    m_status->setText(GuiText::summaryLine(*report));
     QApplication::alert(this);
 }
 
@@ -476,21 +492,26 @@ void MainWindow::setRunning(bool running)
 // Preview and Start need a reachable source and destination.
 QString MainWindow::runBlocker() const
 {
-    auto why = [](const PathPicker *picker, const QString &name) -> QString {
+    // Whole sentences per side: "source"/"destination" do not slot into every language.
+    auto why = [](const PathPicker *picker, bool source) -> QString {
         switch (picker->availability()) {
-        case PathPicker::Availability::Empty: return tr("Choose a %1 folder.").arg(name);
-        case PathPicker::Availability::Checking: return tr("Checking the %1 folder…").arg(name);
+        case PathPicker::Availability::Empty:
+            return source ? tr("Choose a source folder.") : tr("Choose a destination folder.");
+        case PathPicker::Availability::Checking:
+            return source ? tr("Checking the source folder…") : tr("Checking the destination folder…");
         case PathPicker::Availability::Offline:
-            return tr("The %1 folder is offline – connect the drive or check the network.").arg(name);
+            return source ? tr("The source folder is offline – connect the drive or check the network.")
+                          : tr("The destination folder is offline – connect the drive or check the network.");
         case PathPicker::Availability::WrongDisk:
-            return tr("The %1 folder is on a different disk than before – connect the right disk "
-                      "or choose this one for the job.")
-                .arg(name);
+            return source ? tr("The source folder is on a different disk than before – connect the "
+                               "right disk or choose this one for the job.")
+                          : tr("The destination folder is on a different disk than before – connect "
+                               "the right disk or choose this one for the job.");
         default: return QString();
         }
     };
-    const QString source = why(m_source, tr("source"));
-    return source.isEmpty() ? why(m_dest, tr("destination")) : source;
+    const QString source = why(m_source, true);
+    return source.isEmpty() ? why(m_dest, false) : source;
 }
 
 void MainWindow::updateRunButtons()
@@ -542,7 +563,7 @@ void MainWindow::updateScheduleBadges()
     QHash<QString, QString> scheduled;
     const ServiceSchedule schedule = ServiceSchedule::load(ServiceInfo::schedulePath());
     for (const ScheduleEntry &entry : schedule.entries)
-        scheduled.insert(entry.job, entry.enabled ? entry.describe() : tr("%1 (disabled)").arg(entry.describe()));
+        scheduled.insert(entry.job, entry.enabled ? GuiText::describe(entry) : tr("%1 (disabled)").arg(GuiText::describe(entry)));
     m_jobs->setScheduled(scheduled);
 }
 
@@ -563,6 +584,23 @@ void MainWindow::setTheme(ThemeMode mode)
 {
     Theme::apply(mode);
     m_settings.theme = Theme::toString(mode);
+}
+
+void MainWindow::setLanguage(LanguageMode mode)
+{
+    const QString value = Language::toString(mode);
+    if (value == m_settings.language)
+        return;
+    m_settings.language = value;
+    saveSettings();
+    const auto answer = QMessageBox::question(
+        this, tr("Language"),
+        tr("The new language is used after Oborcopy restarts.\n\nRestart Oborcopy now?"));
+    if (answer != QMessageBox::Yes)
+        return;
+    m_restartRequested = true;
+    if (!close())
+        m_restartRequested = false; // e.g. the user kept a running sync
 }
 
 void MainWindow::restoreSettings()

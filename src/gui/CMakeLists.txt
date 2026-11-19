@@ -7,6 +7,8 @@ endif()
 qt_add_executable(Oborcopy WIN32
     main.cpp
     Theme.h Theme.cpp
+    Language.h Language.cpp
+    GuiText.h GuiText.cpp
     IconFactory.h IconFactory.cpp
     GuiUtil.h GuiUtil.cpp
     CollapsibleSection.h CollapsibleSection.cpp
@@ -38,6 +40,23 @@ qt_add_resources(Oborcopy "app_icons"
         ${CMAKE_SOURCE_DIR}/resources/oborcopy.png
         ${CMAKE_SOURCE_DIR}/resources/Claude_Logo.png
         ${CMAKE_SOURCE_DIR}/resources/CrucifyTheMadness_Logo.png)
+
+# German UI: our translations plus Qt's own (standard buttons, file dialogs), both
+# compiled into the executable under :/i18n so nothing extra has to be deployed.
+qt_add_translations(Oborcopy
+    TS_FILES ${CMAKE_SOURCE_DIR}/translations/oborcopy_de.ts
+    RESOURCE_PREFIX "/i18n"
+    LUPDATE_OPTIONS -no-obsolete -locations none)
+
+set(QT_TRANSLATIONS_DIR "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_TRANSLATIONS}")
+if(EXISTS "${QT_TRANSLATIONS_DIR}/qtbase_de.qm")
+    qt_add_resources(Oborcopy "qt_translations"
+        PREFIX "/i18n"
+        BASE ${QT_TRANSLATIONS_DIR}
+        FILES ${QT_TRANSLATIONS_DIR}/qtbase_de.qm)
+else()
+    message(WARNING "qtbase_de.qm not found in '${QT_TRANSLATIONS_DIR}' - Qt's standard dialogs stay English")
+endif()
 
 target_link_libraries(Oborcopy PRIVATE oborcopy_core Qt6::Widgets)
 

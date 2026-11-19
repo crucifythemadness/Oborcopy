@@ -116,7 +116,7 @@ private:
     void runNext();
     bool writeUnitFile(QString *error) const;
     static QString unitFilePath();
-    void signalService(int signal, const QString &text);
+    void signalService(int signal, const QString &failure); // failure: message if it cannot be sent
     bool m_querying = false;
     QList<Command> m_commands;
     QStringList m_hints;

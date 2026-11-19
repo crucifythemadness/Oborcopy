@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Document version | 1.3 |
-| Software version | 1.1.1 |
-| Last updated | 2026-10-24 |
+| Document version | 1.4 |
+| Software version | 1.1.2 |
+| Last updated | 2026-11-19 |
 | Status | Living document – updated with every milestone |
 
 ---
@@ -180,6 +180,8 @@ flowchart TB
 | `SummaryDialog` | Statistics tiles, result tree, error detail pane, CSV export, open log |
 | `HistoryDialog` | Lists previous runs from the JSON reports |
 | `AboutDialog` | Version, build date, Qt version, compiler, platform |
+| `Language` | UI language (System / English / German, `settings.json` → `language`): installs the compiled-in translations (`:/i18n/oborcopy_de.qm`, Qt's `qtbase_de.qm`) and German number/date formats before the first window is built; a change takes effect after the restart offered in View → Language |
+| `GuiText` | Translated GUI texts for things the core describes in English: phase, item kind, run status, mode, schedule description, summary line, and `message()` – matches English core messages (validation, safety stops, disk checks, file errors, change reasons) against `%1` patterns and returns the German text; unknown text (OS errors) is returned unchanged |
 | `Theme`, `IconFactory`, `ModeCard`, `CollapsibleSection`, `GuiUtil` | Look & feel: Fusion style with light/dark palette and style sheet, runtime-painted vector icons, reusable widgets, formatting helpers |
 
 ### 5.4 Level 2 – CLI (`src/cli`)
@@ -379,6 +381,7 @@ Rules: the GUI never touches engine data directly – results arrive as `std::sh
 * **Action bar** – *Preview* (F6) and *Start sync* (F5); while running *Pause/Resume* (F7) and *Cancel* (Shift+F5).
 * **Progress view** replaces the options while running: phase, overall bar (bytes), files, data, speed, time left, current file with its own bar, live counters, activity log; at the end a result banner with *Show details*, *Open log*, *Back to options*.
 * **Theme** – Fusion style with custom light and dark palettes (View → Theme; *System* follows the OS on Qt ≥ 6.5).
+* **Language** – English or German (View → Language; *System* = German if the OS UI language is German). All GUI texts use `tr()`; the German translation lives in `translations/oborcopy_de.ts` and is compiled into the executable. Logs, run reports, CSV export, CLI and service output stay English.
 * Changes are saved automatically (600 ms after the last edit).
 
 ---
@@ -462,11 +465,11 @@ oborcopy-<version>-linux-x86_64/
 
 **User Guide**
 
-`docs/user-guide/Oborcopy-User-Guide.md` (Markdown with screenshots in `docs/user-guide/images/`) is converted to `Oborcopy-User-Guide.pdf` by `.\scripts\build-user-guide.ps1`:
+`docs/user-guide/Oborcopy-User-Guide.md` (English, screenshots in `docs/user-guide/images/`) and `docs/user-guide/Benutzerhandbuch.md` (German, screenshots of the German UI in `docs/user-guide/images-de/`) are converted to `Oborcopy-User-Guide.pdf` and `Benutzerhandbuch.pdf` by `.\scripts\build-user-guide.ps1`:
 1. Pandoc (`pandoc/core` Docker image) produces a self-contained HTML file styled with `guide.css`.
 2. Microsoft Edge (headless) prints it to an A4 PDF.
 
-The PDF is part of both deployment packages.
+Both PDFs are part of both deployment packages.
 
 **Package verification**
 * Windows: started with a PATH that contains no Qt/MinGW folders (CLI `--version`, dry run, GUI window).
@@ -498,6 +501,7 @@ The PDF is part of both deployment packages.
 | AD-11 | Scheduler service runs as the user, not as LocalSystem/root | Same jobs, logs and network shares as the GUI; no privileged process that could be misused to read other users' files; Linux needs no root at all. Cost: the Windows password is entered once (and again after a password change). |
 | AD-12 | Service runs jobs through `oborcopy-cli` in a child process | Keeps the service tiny (no sync engine in-process); a crashing or hanging job cannot take the scheduler down; reuses the CLI's exit codes and logs. |
 | AD-13 | File-based GUI ⇄ service contract (`schedule.json`, `status.json`, `state.json`) | Works identically on Windows and Linux without IPC sockets; atomic writes (`QSaveFile`); GUI and service can be started/stopped independently. |
+| AD-14 | Core stays English; the GUI translates core messages by pattern (`GuiText::message`) | Logs, reports, CLI and service output stay comparable across machines and support cases, and the core needs no translator. Reports reopened from the history are translated too. Cost: a reworded core message must also be updated in `GuiText.cpp` – `tst_guitext` uses real core output to catch this. |
 
 ---
 
@@ -521,3 +525,4 @@ The PDF is part of both deployment packages.
 | 1.1 (SW 1.0.0) | 2026-10-11 | User Guide (Markdown + PDF) with screenshots, included in both packages. UI fixes: "&" in Advanced section titles, width of the job name dialog, "file(s)" label. |
 | 1.2 (SW 1.1.0) | 2026-10-18 | Optional retry of failed scheduled runs (count + interval); Linux fix: the CLI hung on exit when started by the service (blocking stdin read); end-to-end systemd test in Docker (`scripts/test-linux-service.ps1`). Online/offline dots for source and destination (checked in the background, Preview/Start disabled while offline). Oborcopy Scheduler service (`oborcopy-service`, 5.5): Windows service / systemd user service, Service Manager and status pill in the GUI, schedules (hourly/daily/weekly/monthly, catch-up), scheduled runs in the history. Linux folder dialog lists mounted volumes. |
 | 1.3 (SW 1.1.1) | 2026-10-24 | Source and destination show the volume name (label, plus drive letter on Windows) in the drive info line. |
+| 1.4 (SW 1.1.2) | 2026-11-19 | English and German user interface (View → Language, restart to apply; Qt Linguist translations compiled into the executable, `Language`, `GuiText`, AD-14, test `tst_guitext`). Log number formats fixed to English. German user guide `Benutzerhandbuch.md`/`.pdf` with German screenshots, shipped in both packages. |

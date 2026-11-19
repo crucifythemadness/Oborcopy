@@ -7,6 +7,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       build-essential cmake ninja-build \
       qt6-base-dev qt6-base-dev-tools libgl1-mesa-dev patchelf \
+      qt6-tools-dev qt6-tools-dev-tools qt6-l10n-tools qt6-translations-l10n \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
@@ -15,6 +16,7 @@ COPY cmake ./cmake
 COPY resources ./resources
 COPY src ./src
 COPY tests ./tests
+COPY translations ./translations
 
 RUN cmake --preset linux \
  && cmake --build --preset linux \
@@ -25,7 +27,7 @@ RUN cmake --install build/linux --prefix /out
 # Self-contained package (Qt bundled) - extracted by scripts/deploy-linux.ps1.
 COPY packaging ./packaging
 COPY LICENSE ./
-COPY docs/user-guide/Oborcopy-User-Guide.pdf ./docs/user-guide/
+COPY docs/user-guide/Oborcopy-User-Guide.pdf docs/user-guide/Benutzerhandbuch.pdf ./docs/user-guide/
 COPY docker/bundle-linux.sh ./docker/bundle-linux.sh
 RUN sed -i 's/\r$//' docker/bundle-linux.sh \
  && bash docker/bundle-linux.sh /out /src /deploy

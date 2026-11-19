@@ -8,7 +8,8 @@ namespace obor {
 // Application-wide preferences (not job specific), stored in settings.json.
 struct AppSettings
 {
-    QString theme = QStringLiteral("system"); // system | light | dark
+    QString theme = QStringLiteral("system");    // system | light | dark
+    QString language = QStringLiteral("system"); // system | en | de
     QString lastJob;
     QByteArray windowGeometry;
     QByteArray splitterState;

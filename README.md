@@ -8,6 +8,8 @@ features of *Robocopy* and *rsync*, with a preview before anything is deleted.
 * FAT/exFAT timestamp tolerance, retries for locked files, pause/resume/cancel
 * Live progress, log file per run, detailed summary tree, run history
 * Job profiles in JSON, light/dark theme, command-line tool
+* English and German user interface (*View → Language*); translations in
+  [translations/oborcopy_de.ts](translations/oborcopy_de.ts), compiled into the executable
 * **Oborcopy Scheduler** – background service (Windows service / systemd user service) that runs
   jobs hourly, daily, weekly or monthly, also when the GUI is closed; managed from the GUI (`Ctrl+M`)
 
@@ -46,6 +48,8 @@ oborcopy-cli --job "Music Backup" --yes
 
 * **User Guide:** [docs/user-guide/Oborcopy-User-Guide.md](docs/user-guide/Oborcopy-User-Guide.md)
   (PDF: [Oborcopy-User-Guide.pdf](docs/user-guide/Oborcopy-User-Guide.pdf), rebuilt with `.\scripts\build-user-guide.ps1`)
+* **Benutzerhandbuch (German):** [docs/user-guide/Benutzerhandbuch.md](docs/user-guide/Benutzerhandbuch.md)
+  (PDF: [Benutzerhandbuch.pdf](docs/user-guide/Benutzerhandbuch.pdf), built by the same script)
 * **Architecture:** [Oborcopy-SAD.md](Oborcopy-SAD.md)
 
 ## License

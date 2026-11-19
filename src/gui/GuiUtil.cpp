@@ -115,7 +115,7 @@ QString formatWhen(const QDateTime &when)
         return QObject::tr("yesterday %1").arg(time);
     if (days > 1 && days < 7)
         return QStringLiteral("%1 %2").arg(QLocale().dayName(when.date().dayOfWeek(), QLocale::ShortFormat), time);
-    return QStringLiteral("%1 %2").arg(QLocale().toString(when.date(), QStringLiteral("d MMM")), time);
+    return QStringLiteral("%1 %2").arg(QLocale().toString(when.date(), QObject::tr("d MMM", "date format")), time);
 }
 
 QStringList splitPatterns(const QString &text)

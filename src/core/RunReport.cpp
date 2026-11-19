@@ -114,7 +114,7 @@ void RunReport::addItem(const ReportItem &item)
 
 QString RunReport::summaryLine() const
 {
-    const QLocale locale;
+    const QLocale locale(QLocale::English); // log/report text: English, also under a German GUI
     auto n = [&locale](int value) { return locale.toString(value); };
     if (dryRun) {
         return QStringLiteral("Preview: %1 files checked, %2 to copy, %3 to update, %4 to delete")

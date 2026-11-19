@@ -1,5 +1,6 @@
 #include "ScheduleEditorDialog.h"
 
+#include "GuiText.h"
 #include "GuiUtil.h"
 
 #include <QButtonGroup>
@@ -258,7 +259,7 @@ void ScheduleEditorDialog::updatePreview()
                     .arg(total >= 60 ? tr("%1 h %2 min").arg(total / 60).arg(total % 60) : tr("%1 min").arg(total));
     }
     m_preview->setText(tr("<b>%1</b><br>Next runs: %2%3%4")
-                           .arg(e.describe().toHtmlEscaped(), runs.join(QStringLiteral(" · ")),
+                           .arg(GuiText::describe(e).toHtmlEscaped(), runs.join(QStringLiteral(" · ")),
                                 e.enabled ? QString() : tr(" <i>(disabled)</i>"), retry));
 }
 

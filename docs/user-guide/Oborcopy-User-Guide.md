@@ -6,7 +6,7 @@
 
 **Back up and mirror your folders – safely and step by step**
 
-Version 1.1.1 · for Windows 10/11 and Linux
+Version 1.1.2 · for Windows 10/11 and Linux
 
 </div>
 
@@ -49,6 +49,8 @@ Words used in this guide:
 * **Destination** – the folder that receives the copy (e.g. `E:\Music`).
 * **Job** – a saved set of settings: source, destination, mode and options. You can save as many jobs as you like.
 
+Oborcopy is available in **English and German** ([section 11.2](#112-language)). This guide is also available in German: *Benutzerhandbuch.pdf*.
+
 ---
 
 ## 2. Installation
@@ -57,7 +59,7 @@ Oborcopy does not need an installer. You unpack it and start it.
 
 ### 2.1 Windows 10 / 11
 
-1. Unpack `Oborcopy-1.1.1-win64.zip` to a folder of your choice, for example `C:\Tools\Oborcopy`.
+1. Unpack `Oborcopy-1.1.2-win64.zip` to a folder of your choice, for example `C:\Tools\Oborcopy`.
 2. Double-click **`Oborcopy.exe`**.
 3. *Optional:* right-click `Oborcopy.exe` → **Show more options → Send to → Desktop (create shortcut)**.
 
@@ -71,11 +73,11 @@ Requirements: 64-bit Linux, as new as Ubuntu 24.04 or newer (e.g. Linux Mint 22,
 
 1. Unpack the archive in a terminal:
    ```
-   tar xzf oborcopy-1.1.1-linux-x86_64.tar.gz
+   tar xzf oborcopy-1.1.2-linux-x86_64.tar.gz
    ```
 2. Start Oborcopy:
    ```
-   cd oborcopy-1.1.1-linux-x86_64
+   cd oborcopy-1.1.2-linux-x86_64
    ./oborcopy
    ```
 3. *Optional:* add Oborcopy to your application menu:
@@ -114,7 +116,7 @@ That's it. Your settings are saved automatically – next week you only click **
 | **Basic tab** | The mode cards **Update** / **Mirror** and the most important options. Most users never need more. |
 | **Advanced tab** | All further options, grouped into sections ([section 8](#8-advanced-options)). |
 | **Action bar (bottom)** | **Preview** and **Start sync**. While a sync is running: **Pause/Resume** and **Cancel**. On the left a status text, e.g. *"All changes saved"*. |
-| **Menu bar** | *File* (new job, save, run history, log folder, exit), *Run* (start, preview, pause, cancel), *View* (theme), *Help* (About). |
+| **Menu bar** | *File* (new job, save, run history, log folder, exit), *Run* (start, preview, pause, cancel), *Service* (Service Manager, schedule this job), *View* (theme, language), *Help* (About). |
 
 ### 4.1 Choosing folders
 
@@ -530,7 +532,7 @@ Open the cron table with `crontab -e` and add this line (Sunday 20:00 – use th
 | What | Windows | Linux |
 |---|---|---|
 | Jobs | `%LOCALAPPDATA%\Oborcopy\jobs\` | `~/.config/Oborcopy/jobs/` |
-| Program settings (theme, window size) | `%LOCALAPPDATA%\Oborcopy\settings.json` | `~/.config/Oborcopy/settings.json` |
+| Program settings (theme, language, window size) | `%LOCALAPPDATA%\Oborcopy\settings.json` | `~/.config/Oborcopy/settings.json` |
 | Log files and run reports | `%LOCALAPPDATA%\Oborcopy\logs\` | `~/.local/share/Oborcopy/logs/` |
 | Scheduler: schedule, status and service log | `%LOCALAPPDATA%\Oborcopy\service\` | `~/.config/Oborcopy/service/` |
 | Scheduler service definition | Windows *Services* (`Oborcopy`) | `~/.config/systemd/user/oborcopy.service` |
@@ -545,6 +547,17 @@ Open the cron table with `crontab -e` and add this line (Sunday 20:00 – use th
 Choose *View → Theme → System, Light* or *Dark*. *System* follows the setting of your operating system.
 
 ![Dark theme](images/15-dark-theme.png)
+
+### 11.2 Language
+
+Oborcopy speaks **English** and **German**. Choose *View → Language → System, English* or *Deutsch*:
+
+* **System** (default) – German if your operating system is set to German, otherwise English.
+* **English** / **Deutsch** – always this language. The language names are written in their own language, so you can find your way back even if you do not read the current one.
+
+Oborcopy asks whether it should **restart now** – the new language is used after the restart. If a sync is running, Oborcopy asks first whether to cancel it; you can also restart later yourself.
+
+> **Good to know:** Log files, run reports, the command-line tool and the Scheduler service log always stay **English**, so they look the same on every computer. Messages from the operating system (e.g. *"being used by another process"*) appear in the language of your operating system.
 
 ---
 
@@ -649,4 +662,4 @@ Your Windows password has changed. Click **Update password…** and enter the ne
 
 ---
 
-<p align="center"><em>Oborcopy 1.1.1 – User Guide</em></p>
+<p align="center"><em>Oborcopy 1.1.2 – User Guide</em></p>

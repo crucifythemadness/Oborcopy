@@ -46,7 +46,8 @@ void ReportSink::log(const ReportItem &item)
     QString line = QStringLiteral("%1 %2").arg(toString(item.kind).toUpper().leftJustified(14),
                                                item.relPath);
     if (item.size > 0)
-        line += QStringLiteral("  (%1)").arg(QLocale().formattedDataSize(item.size));
+        // English number format like the rest of the log, whatever the GUI language is.
+        line += QStringLiteral("  (%1)").arg(QLocale(QLocale::English).formattedDataSize(item.size));
     if (!item.message.isEmpty())
         line += QStringLiteral("  [%1]").arg(item.message);
     if (item.kind == ItemKind::Skipped)

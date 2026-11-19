@@ -1,5 +1,6 @@
 #include "SummaryDialog.h"
 
+#include "GuiText.h"
 #include "GuiUtil.h"
 #include "IconFactory.h"
 #include "Theme.h"
@@ -40,7 +41,7 @@ SummaryDialog::SummaryDialog(RunReport report, QWidget *parent)
     layout->addWidget(buildTiles());
     if (!m_report.fatalError.isEmpty()) {
         layout->addWidget(GuiUtil::makeBanner(IconFactory::icon(IconKind::Error, Theme::colors().danger),
-                                              m_report.fatalError.toHtmlEscaped(),
+                                              GuiText::message(m_report.fatalError).toHtmlEscaped(),
                                               Theme::colors().danger, this));
     }
     layout->addWidget(splitter, 1);
@@ -61,17 +62,17 @@ QVector<ResultRow> SummaryDialog::rowsFromReport(const RunReport &report)
 QWidget *SummaryDialog::buildHeader()
 {
     auto *header = new QWidget(this);
-    auto *title = GuiUtil::makeLabel(QStringLiteral("%1 – %2").arg(m_report.jobName, toString(m_report.status)),
+    auto *title = GuiUtil::makeLabel(QStringLiteral("%1 – %2").arg(m_report.jobName, GuiText::status(m_report.status)),
                                      QStringLiteral("Title"), header);
     const QString when = QLocale().toString(m_report.started, QLocale::ShortFormat);
     auto *meta = GuiUtil::makeLabel(
         tr("%1 · %2 · %3 → %4 · duration %5")
-            .arg(when, toString(m_report.mode) + (m_report.dryRun ? tr(" (preview)") : QString()),
+            .arg(when, GuiText::mode(m_report.mode) + (m_report.dryRun ? tr(" (preview)") : QString()),
                  GuiUtil::displayPath(m_report.source), GuiUtil::displayPath(m_report.destination),
                  GuiUtil::formatDuration(m_report.durationMs() / 1000)),
         QStringLiteral("Muted"), header);
     meta->setWordWrap(true);
-    auto *line = GuiUtil::makeLabel(m_report.summaryLine(), QStringLiteral("SectionTitle"), header);
+    auto *line = GuiUtil::makeLabel(GuiText::summaryLine(m_report), QStringLiteral("SectionTitle"), header);
     auto *layout = new QVBoxLayout(header);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(title);
@@ -131,10 +132,11 @@ void SummaryDialog::showDetails(const ResultRow *row)
         html += tr("Size: %1<br>").arg(GuiUtil::formatBytes(row->size));
     if (row->kind == ItemKind::Error) {
         html += tr("<span style='color:%1'><b>%2 failed:</b> %3</span><br>Attempts: %4")
-                    .arg(Theme::colors().warning.name(), row->operation, row->message.toHtmlEscaped())
+                    .arg(Theme::colors().warning.name(), GuiText::message(row->operation),
+                         GuiText::message(row->message).toHtmlEscaped())
                     .arg(row->attempts);
     } else if (!row->message.isEmpty()) {
-        html += tr("Reason: %1").arg(row->message.toHtmlEscaped());
+        html += tr("Reason: %1").arg(GuiText::message(row->message).toHtmlEscaped());
     }
     m_details->setHtml(html);
 }

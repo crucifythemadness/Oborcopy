@@ -11,6 +11,10 @@ REQUIREMENTS
 
 USER GUIDE
   Oborcopy-User-Guide.pdf in this folder explains everything step by step.
+  German: Benutzerhandbuch.pdf.
+
+LANGUAGE
+  Oborcopy speaks English and German: View > Language (restarts Oborcopy).
 
 START
   tar xzf oborcopy-@VERSION@-linux-x86_64.tar.gz

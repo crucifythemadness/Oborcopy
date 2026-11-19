@@ -30,7 +30,7 @@ foreach ($exe in "Oborcopy.exe", "oborcopy-cli.exe", "oborcopy-service.exe") {
     Set-Content -Encoding utf8 "$deploy\README.txt"
 Copy-Item -Recurse "$root\packaging\LICENSES" "$deploy\LICENSES"
 Copy-Item "$root\LICENSE" "$deploy\LICENSE.txt"
-Copy-Item "$root\docs\user-guide\Oborcopy-User-Guide.pdf" $deploy
+Copy-Item "$root\docs\user-guide\Oborcopy-User-Guide.pdf", "$root\docs\user-guide\Benutzerhandbuch.pdf" $deploy
 
 $zip = "$root\Oborcopy-$version-win64.zip"
 if (Test-Path $zip) { Remove-Item $zip }

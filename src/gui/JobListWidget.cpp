@@ -1,5 +1,6 @@
 #include "JobListWidget.h"
 
+#include "GuiText.h"
 #include "IconFactory.h"
 #include "JobStore.h"
 
@@ -132,7 +133,7 @@ void JobListWidget::renameJob()
     emit aboutToModify();
     QString error;
     if (!m_store.rename(current, name, &error)) {
-        QMessageBox::warning(this, tr("Rename job"), error);
+        QMessageBox::warning(this, tr("Rename job"), GuiText::message(error));
         return;
     }
     emit jobRenamed(current, name);

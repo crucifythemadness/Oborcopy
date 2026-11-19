@@ -214,7 +214,7 @@ SyncPlan SyncEngine::buildPlan(const ScanResult &source, const ScanResult &dest)
                        .arg(plan.count(ActionType::CopyNew))
                        .arg(plan.count(ActionType::Update))
                        .arg(plan.deletions.size())
-                       .arg(QLocale().formattedDataSize(plan.bytesToCopy)));
+                       .arg(QLocale(QLocale::English).formattedDataSize(plan.bytesToCopy)));
     for (const SyncAction &skip : plan.skipped)
         m_sink->add({ItemKind::Skipped, skip.relPath, skip.size, {}, skip.reason, 1});
     return plan;

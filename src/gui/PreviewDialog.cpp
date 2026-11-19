@@ -1,5 +1,6 @@
 #include "PreviewDialog.h"
 
+#include "GuiText.h"
 #include "GuiUtil.h"
 #include "IconFactory.h"
 #include "Theme.h"
@@ -29,7 +30,7 @@ PreviewDialog::PreviewDialog(const SyncPlan &plan, const JobOptions &job, bool p
     auto *paths = GuiUtil::makeLabel(QStringLiteral("%1  →  %2  (%3)")
                                          .arg(GuiUtil::displayPath(job.source),
                                               GuiUtil::displayPath(job.destination),
-                                              toString(job.mode)),
+                                              GuiText::mode(job.mode)),
                                      QStringLiteral("Muted"), this);
     paths->setWordWrap(true);
     auto *tree = new ResultTreeView(this);
@@ -59,7 +60,7 @@ QVector<ResultRow> PreviewDialog::rowsFromPlan(const SyncPlan &plan)
         rows.append({a.relPath, a.type == ActionType::CopyNew ? ItemKind::Copied : ItemKind::Updated,
                      a.size, a.reason, {}, 0});
     for (const ScanError &e : plan.scanErrors)
-        rows.append({e.relPath, ItemKind::Error, 0, e.message, tr("Scan"), 0});
+        rows.append({e.relPath, ItemKind::Error, 0, e.message, QStringLiteral("Scan"), 0});
     return rows;
 }
 

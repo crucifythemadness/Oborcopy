@@ -3,6 +3,7 @@
 #include "AppSettings.h"
 #include "JobOptions.h"
 #include "JobStore.h"
+#include "Language.h"
 #include "SyncController.h"
 #include "Theme.h"
 
@@ -33,6 +34,8 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
+    // The user changed the language and chose "restart now".
+    bool restartRequested() const { return m_restartRequested; }
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -75,6 +78,7 @@ private:
     void showServiceManager(const QString &scheduleJob = QString());
     void updateScheduleBadges();
     void setTheme(ThemeMode mode);
+    void setLanguage(LanguageMode mode);
     void restoreSettings();
     void saveSettings();
 
@@ -85,6 +89,7 @@ private:
     bool m_loading = false;
     bool m_previewRun = false;
     bool m_blockerShown = false; // the status line shows why Preview/Start are disabled
+    bool m_restartRequested = false;
     ReportPtr m_lastReport;
     SyncController *m_sync;
     QTimer *m_saveTimer;

@@ -1,5 +1,6 @@
 #include "ResultTreeView.h"
 
+#include "GuiText.h"
 #include "GuiUtil.h"
 #include "IconFactory.h"
 #include "Theme.h"
@@ -112,6 +113,7 @@ QWidget *ResultTreeView::buildToolbar()
     m_search->setPlaceholderText(tr("Search…"));
     m_search->setClearButtonEnabled(true);
     m_search->setMaximumWidth(220);
+    m_search->setMinimumWidth(110); // stays usable when the filter chips need more room (longer translations)
     auto *expand = new QToolButton(bar);
     expand->setText(tr("Expand all"));
     auto *collapse = new QToolButton(bar);
@@ -127,7 +129,7 @@ QWidget *ResultTreeView::buildToolbar()
 QString ResultTreeView::actionLabel(ItemKind kind, bool preview)
 {
     if (!preview)
-        return toString(kind);
+        return GuiText::itemKind(kind);
     switch (kind) {
     case ItemKind::Copied: return tr("New");
     case ItemKind::Updated: return tr("Update");
@@ -226,9 +228,9 @@ QList<QStandardItem *> ResultTreeView::makeRow(const ResultRow &row, int index) 
     action->setForeground(color);
     auto *size = new QStandardItem(row.size > 0 ? GuiUtil::formatBytes(row.size) : QString());
     size->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    QString details = row.message;
+    QString details = GuiText::message(row.message);
     if (row.kind == ItemKind::Error)
-        details = tr("%1: %2").arg(row.operation, row.message);
+        details = tr("%1: %2").arg(GuiText::message(row.operation), details);
     return {nameItem, action, size, new QStandardItem(details)};
 }
 

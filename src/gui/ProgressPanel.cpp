@@ -1,5 +1,6 @@
 #include "ProgressPanel.h"
 
+#include "GuiText.h"
 #include "GuiUtil.h"
 #include "IconFactory.h"
 #include "Theme.h"
@@ -153,7 +154,7 @@ QWidget *ProgressPanel::buildResultBanner()
 void ProgressPanel::startRun(const QString &jobName, bool preview)
 {
     m_title->setText(preview ? tr("Preview: %1").arg(jobName) : jobName);
-    m_phase->setText(toString(SyncPhase::Validating));
+    m_phase->setText(GuiText::phase(SyncPhase::Validating));
     m_state->clear();
     m_percent->clear();
     m_overall->setRange(0, 0); // busy indicator until totals are known
@@ -167,7 +168,7 @@ void ProgressPanel::startRun(const QString &jobName, bool preview)
 
 void ProgressPanel::updateProgress(const ProgressInfo &info)
 {
-    QString phase = toString(info.phase);
+    QString phase = GuiText::phase(info.phase);
     if (info.phase == SyncPhase::Scanning)
         phase += tr(" – %1 entries").arg(GuiUtil::formatCount(info.scanned));
     m_phase->setText(m_paused ? tr("Paused – %1").arg(phase) : phase);
@@ -230,9 +231,9 @@ void ProgressPanel::showResult(const RunReport &report)
         color = c.muted;
     }
     m_bannerIcon->setPixmap(IconFactory::icon(icon, color).pixmap(32, 32));
-    QString text = QStringLiteral("<b>%1</b> – %2").arg(toString(report.status), report.summaryLine());
+    QString text = QStringLiteral("<b>%1</b> – %2").arg(GuiText::status(report.status), GuiText::summaryLine(report));
     if (!report.fatalError.isEmpty())
-        text += QStringLiteral("<br>%1").arg(report.fatalError.toHtmlEscaped());
+        text += QStringLiteral("<br>%1").arg(GuiText::message(report.fatalError).toHtmlEscaped());
     m_bannerText->setText(text);
     m_banner->setVisible(true);
     m_state->clear();
